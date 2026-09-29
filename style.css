@@ -296,7 +296,8 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outli
   height: 8px; border-radius: 6px; background: #fff; border: 2px solid var(--ink); overflow: hidden; width: 90px;
 }
 .rankbar > i { display: block; height: 100%; background: var(--gold); }
-.currencies { display: flex; gap: 6px; flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.topbar-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.currencies { display: flex; gap: 6px; width: 100%; flex-wrap: wrap; justify-content: flex-end; min-width: 0; margin-top: 4px; }
 
 .chapter-card { position: relative; }
 .chapter-card .stage { height: 160px; border-radius: 14px; overflow: hidden; border: 3px solid var(--trim); position: relative; background: var(--dusk-top); }
@@ -377,6 +378,85 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outli
   background: var(--ad); color: #fff; border: 2px solid var(--ink); border-radius: 8px;
   font-size: 10px; padding: 1px 5px; margin-left: 4px; font-family: "Titan One", sans-serif;
 }
+
+/* ---- Home: Pass round button ---- */
+
+.pass-round {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  border-radius: 50%; padding: 0;
+  background: var(--slate-raised); border-color: var(--trim);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+  flex: 0 0 auto;
+}
+.pass-round svg { width: 22px; height: 22px; }
+
+/* ---- Section titles shared by Shop / Spell Book / Frog ---- */
+
+.shop-section-title {
+  font-family: "Titan One", sans-serif; font-size: 13px; color: var(--parchment);
+  margin: 14px 16px 6px;
+}
+
+/* ---- Spell Book ---- */
+
+.spellbook-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 16px; }
+.spell-tile {
+  padding: 8px; text-align: center; aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border-width: 3px; min-width: 0;
+}
+.spell-tile canvas { width: 56%; height: 56%; }
+.spell-tile.locked { opacity: 0.55; }
+.spell-tile.dim { background: #4A4560; border-color: #6A6482; }
+.spell-tile .name { font-size: 11px; font-family: "Kreon", Georgia, serif; font-weight: 700; }
+
+/* ---- Frog ---- */
+
+.frog-stage-wrap { position: relative; height: 220px; flex-shrink: 0; margin: 8px 16px; }
+#frog-stage-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.frog-slots {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-around; padding: 0 4px 4px;
+  pointer-events: none;
+}
+.frog-slot-btn {
+  pointer-events: auto;
+  background: rgba(38, 42, 61, 0.85); border: 2px solid var(--trim); border-radius: 10px;
+  box-shadow: none; padding: 4px; min-height: 0; min-width: 0;
+  flex-direction: column; gap: 2px; color: #EDE6F5; font-size: 9px;
+  font-family: "Kreon", Georgia, serif; font-weight: 700;
+}
+.frog-slot-btn:active { transform: none; }
+.frog-slot-btn.empty { opacity: 0.6; }
+.frog-slot-canvas { width: 40px; height: 40px; }
+
+.gear-inventory-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 8px 16px; }
+.gear-inv-card {
+  background: var(--slate); border: 2px solid var(--trim); border-radius: 12px;
+  box-shadow: none; padding: 6px; min-height: 0;
+  flex-direction: column; gap: 2px; color: #EDE6F5;
+}
+.gear-inv-card:active { transform: none; }
+.gear-inv-card.equipped { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+.gear-inv-canvas { width: 44px; height: 44px; }
+
+.set-row { display: flex; flex-direction: column; gap: 4px; }
+.set-icons { display: flex; gap: 6px; }
+.set-icon-canvas { width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,0.06); }
+.set-icon-canvas.dim { opacity: 0.3; }
+
+/* ---- Shop ---- */
+
+.offer-banner { text-align: center; background: linear-gradient(180deg, var(--slate-raised), var(--slate)); }
+.offer-countdown { font-family: "Titan One", sans-serif; font-size: 12px; color: var(--gold); margin-top: 4px; }
+
+.daily-shop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 16px; }
+.daily-shop-card { text-align: center; }
+.shop-item-canvas { width: 56px; height: 56px; }
+
+.gem-pack-row { display: flex; gap: 8px; margin: 10px 16px 100px; }
+.gem-pack-card { flex: 1 1 0; text-align: center; min-width: 0; }
+.gem-pack-icon { width: 26px; height: 26px; }
 
 /* ---- Locked ---- */
 

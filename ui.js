@@ -43,6 +43,7 @@
       adsWatchedToday: 0,
       noAds: false,
       prerunExtra: null,
+      meta: Meta.newMetaSave(),
     };
   }
 
@@ -52,9 +53,10 @@
     if (save) return save;
     try {
       var raw = localStorage.getItem(SAVE_KEY);
-      if (raw) { save = Object.assign(defaultSave(), JSON.parse(raw)); return save; }
+      if (raw) { save = Object.assign(defaultSave(), JSON.parse(raw)); }
     } catch (e) { /* storage unavailable: fall through to defaults */ }
-    save = defaultSave();
+    if (!save) save = defaultSave();
+    if (!save.meta) save.meta = Meta.newMetaSave(); // migrate an old save
     return save;
   }
 
@@ -72,7 +74,7 @@
   // ---------------------------------------------------------------------
 
   var RANKS = [
-    { name: 'Novice', tier: 1, xp: 0, unlocks: 'Ember Salt, Frost Petal, Blast Powder, Moon Dust, Quicksilver, Frogspawn' },
+    { name: 'Novice', tier: 1, xp: 0, unlocks: 'Ember Salt, Frost Petal, Blast Powder, Moon Dust, Quicksilver, Lily Dew' },
     { name: 'Apprentice', tier: 1, xp: 600, unlocks: 'Nightshade, Storm Feather' },
     { name: 'Adept', tier: 2, xp: 1600, unlocks: 'Chapter 2' },
     { name: 'Mage', tier: 2, xp: 3600, unlocks: 'Chapter 3, a 13th cauldron slot' },
@@ -81,58 +83,59 @@
 
   var BUILDINGS = [
     { key: 'wizardTower', name: 'Wizard Tower', icon: 'i-tower', desc: 'Caps every other building\'s level', base: 300 },
-    { key: 'nursery', name: 'Tadpole Nursery', icon: 'i-bag', desc: '+1 starting apprentice per level', base: 100 },
+    { key: 'nursery', name: 'Healer\'s Hut', icon: 'i-bag', desc: '+10 max health per level', base: 100 },
     { key: 'library', name: 'Library', icon: 'i-book', desc: '+5% spell power per level', base: 150 },
     { key: 'alchemy', name: 'Alchemy Lab', icon: 'i-power', desc: '+1 free reroll per brew at level 2; rank still sets the tier floor', base: 200 },
     { key: 'herb', name: 'Herb Garden', icon: 'i-chest', desc: 'Grows coins while you are away, up to a cap', base: 120 },
-  ];
-
-  var WIZARDS = [
-    { id: 'pip', name: 'Pip', species: 'tree frog', rarity: 'Rare', skill: 'Spark Nova: every 12s zaps the 5 nearest rats', source: 'Start', free: true },
-    { id: 'croak', name: 'Sergeant Croak', species: 'bullfrog', rarity: 'Rare', skill: 'Fire Rain: burns a lane for 3s', source: 'Daily reward, day 2', free: true },
-    { id: 'lily', name: 'Duchess Lily', species: 'golden frog', rarity: 'Legendary', skill: 'Frost Ward: slows every rat 30% for 4s', source: 'Daily reward, day 7', free: true },
-    { id: 'warts', name: 'Professor Warts', species: 'toad', rarity: 'Epic', skill: 'Recipe Scholar: named spells +10%', source: 'Chapter 2 boss', free: true },
-    { id: 'dart', name: 'Dart', species: 'poison dart frog', rarity: 'Rare', skill: 'Lucky Leap: +15% coins', source: 'Shop, $4.99', free: false, price: '$4.99' },
-    { id: 'morgana', name: 'Morgana', species: 'black and white frog', rarity: 'Legendary', skill: 'Hex: poison spreads twice as far', source: 'Season pass, tier 30', free: false, price: 'Season pass' },
-  ];
-
-  var SPELLS = [
-    { name: 'Ember Bolt', elements: ['fire'] }, { name: 'Frost Shard', elements: ['ice'] }, { name: 'Venom Spit', elements: ['poison'] },
-    { name: 'Blast Rune', elements: ['blast'] }, { name: 'Spark', elements: ['storm'] },
-    { name: 'Steam Burst', elements: ['fire', 'ice'] }, { name: 'Hellbrew', elements: ['fire', 'poison'] }, { name: 'Fireball', elements: ['fire', 'blast'] }, { name: 'Sunfire', elements: ['fire', 'storm'] },
-    { name: 'Frostbite', elements: ['ice', 'poison'] }, { name: 'Shatter', elements: ['ice', 'blast'] }, { name: 'Blizzard', elements: ['ice', 'storm'] },
-    { name: 'Plague Bomb', elements: ['poison', 'blast'] }, { name: 'Acid Rain', elements: ['poison', 'storm'] },
-    { name: 'Thunderclap', elements: ['blast', 'storm'] },
   ];
 
   var ELEM_COLOR = { fire: 'var(--fire)', ice: 'var(--ice)', poison: 'var(--poison)', blast: 'var(--blast)', storm: 'var(--storm)', arcane: 'var(--arcane)' };
 
   var DAILY_REWARDS = [
     { label: '200 coins', kind: 'coins', v: 200 },
-    { label: 'Sergeant Croak', kind: 'wizard', v: 'croak' },
+    { label: 'A Rare gear piece', kind: 'gear', v: 'rare' },
     { label: '30 gems', kind: 'gems', v: 30 },
     { label: 'A tier 2 ingredient crate', kind: 'ingredient', v: 2 },
     { label: '1,000 coins', kind: 'coins', v: 1000 },
     { label: '60 gems', kind: 'gems', v: 60 },
-    { label: 'Duchess Lily', kind: 'wizard', v: 'lily', big: true },
+    { label: 'A Legendary gear piece', kind: 'gear', v: 'legendary', big: true },
   ];
 
-  var SHOP_ITEMS = [
-    { name: 'First purchase', price: '$0.99', desc: 'A big gem and coin bundle, once' },
-    { name: 'Starter pack', price: '$1.99', desc: 'Gems, coins, a hat' },
+  // Shop, laid out like Gun Hero's: a chain offer banner, a daily card row (3 coin
+  // cards plus 1 free-via-ad card), chests with exact named contents, then the money
+  // shelf and gem packs (design 9.2).
+  var CHAIN_OFFER = { name: 'Bog Road Bundle', price: '$4.99', desc: '400 gems, 4,000 coins and a Rare Staff, once' };
+
+  var DAILY_SHOP_CARDS = [
+    { kind: 'gear', id: 'bogwitch-hat', rarity: 'common', label: 'Bog Witch Hat (Common)', price: 200 },
+    { kind: 'gear', id: 'storm-amulet', rarity: 'common', label: 'Storm Caller Amulet (Common)', price: 260 },
+    { kind: 'crate', tier: 2, label: 'Tier 2 ingredient crate', price: 350 },
+    { kind: 'gear', id: 'lily-robe', rarity: 'rare', label: 'Lily Knight Robe (Rare)', free: true },
+  ];
+
+  var CHESTS = [
+    { name: 'Bog Witch chest', contains: 'Rare Hat, Common Robe', price: 60 },
+    { name: 'Storm Caller chest', contains: 'Rare Staff, Common Amulet', price: 60 },
+    { name: 'Lily Knight chest', contains: 'Rare Robe, Common Hat', price: 60 },
+  ];
+
+  var MONEY_ITEMS = [
     { name: 'No ads', price: '$4.99', desc: 'Removes the interstitial; rewarded ads stay optional' },
     { name: 'Monthly pass', price: '$4.99 / mo', desc: '50 gems a day, 1 free revive a day, double pass XP' },
+    { name: 'First purchase', price: '$0.99', desc: 'A big gem and coin bundle, once' },
     { name: 'Growth fund', price: '$9.99', desc: 'Pays gems out at each new rank' },
-    { name: 'Gem pack, small', price: '$0.99', desc: '100 gems' },
-    { name: 'Gem pack, medium', price: '$4.99', desc: '550 gems' },
-    { name: 'Gem pack, large', price: '$19.99', desc: '3,000 gems' },
-    { name: 'Wizard bundle: Dart', price: '$4.99', desc: 'A named wizard' },
+  ];
+
+  var GEM_PACKS = [
+    { name: 'Gem pack, small', price: '$0.99', gems: 100 },
+    { name: 'Gem pack, medium', price: '$4.99', gems: 550 },
+    { name: 'Gem pack, large', price: '$19.99', gems: 3000 },
   ];
 
   var AD_MAP = [
     { slot: 'A1', where: 'App open, returning players only', type: 'App Open' },
     { slot: 'A3', where: 'Daily chest; "claim x2" on the daily reward', type: 'Rewarded' },
-    { slot: 'A4', where: 'Pre-run: start with 10 extra wizards', type: 'Rewarded' },
+    { slot: 'A4', where: 'Pre-run: start with a health boost', type: 'Rewarded' },
     { slot: 'A5', where: 'Revive, first per run', type: 'Rewarded' },
     { slot: 'A6', where: 'After results, from the third run, at least 3 minutes apart', type: 'Interstitial' },
     { slot: 'A7', where: 'Double coins on results', type: 'Rewarded' },
@@ -207,7 +210,7 @@
   // Navigation
   // ---------------------------------------------------------------------
 
-  var NAV_SCREENS = ['shop', 'tower', 'home', 'wizards', 'pass'];
+  var NAV_SCREENS = ['shop', 'spellbook', 'home', 'frog', 'tower'];
   var current = null;
 
   function show(id) {
@@ -230,12 +233,12 @@
     var navbar = $('navbar');
     navbar.innerHTML =
       navBtn('shop', 'i-shop', 'Shop') +
-      navBtn('tower', 'i-tower', 'Tower') +
+      navBtn('spellbook', 'i-book', 'Spell Book') +
       navBtn('home', 'i-battle', 'Battle', true) +
-      navBtn('wizards', 'i-hat', 'Wizards') +
-      navBtn('pass', 'i-crown', 'Pass');
+      navBtn('frog', 'i-hat', 'Frog') +
+      navBtn('tower', 'i-tower', 'Tower');
     navbar.querySelectorAll('.navbtn').forEach(function (b) {
-      b.addEventListener('click', function () { show(b.dataset.nav); refreshScreen(b.dataset.nav); });
+      b.addEventListener('pointerup', function () { show(b.dataset.nav); refreshScreen(b.dataset.nav); });
     });
   }
   function navBtn(id, iconId, label, raised) {
@@ -245,8 +248,9 @@
   function refreshScreen(id) {
     if (id === 'home') buildHome();
     else if (id === 'tower') buildTower();
-    else if (id === 'wizards') buildWizards();
+    else if (id === 'frog') buildFrog();
     else if (id === 'shop') buildShop();
+    else if (id === 'spellbook') buildSpellbook();
     else if (id === 'pass') buildPass();
   }
 
@@ -262,7 +266,7 @@
       '<div class="title-core-btns">' +
       '<button type="button" class="btn-go core-btn" id="btn-play">PLAY</button>' +
       '</div>';
-    $('btn-play').addEventListener('click', function () { chooseCore('b'); });
+    $('btn-play').addEventListener('pointerup', function () { chooseCore('b'); });
     startTitleAttract();
   }
 
@@ -310,10 +314,13 @@
     var dailyReady = isDailyReady();
     s.innerHTML =
       '<div class="topbar">' +
+      '<div class="topbar-row">' +
       '<div class="avatar"><canvas id="home-portrait"></canvas></div>' +
-      '<div class="col" style="gap:2px">' +
+      '<div class="col grow" style="gap:2px">' +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:14px">Novice Pip</div>' +
       '<div class="rankbar"><i style="width:' + pct + '%"></i></div>' +
+      '</div>' +
+      '<button type="button" class="pass-round" id="home-pass" aria-label="Pass">' + icon('i-crown') + '</button>' +
       '</div>' +
       '<div class="currencies">' +
       currencyPill('i-power', 'Power', fmt(powerScore()), true, 'power') +
@@ -334,19 +341,19 @@
       '<div class="col">' +
       homeMiniCard('daily', 'i-calendar', 'Daily', dailyReady) +
       homeMiniCard('freechest', 'i-chest', 'Free chest', false, true) +
-      homeMiniCard('starter', 'i-bag', 'Starter pack $1.99', false) +
       '</div>' +
       '<div class="col">' +
-      homeMiniCard('spellbook', 'i-book', 'Spell book', false) +
+      homeMiniCard('starter', 'i-bag', 'Starter pack $1.99', false) +
       homeMiniCard('dailybrew', 'i-swipe', 'Daily Brew', false) +
       '</div>' +
       '</div>';
-    $('home-play').addEventListener('click', function () { buildPrerun(); show('prerun'); });
+    $('home-play').addEventListener('pointerup', function () { buildPrerun(); show('prerun'); });
+    $('home-pass').addEventListener('pointerup', function () { buildPass(); show('pass'); });
     s.querySelectorAll('[data-open]').forEach(function (b) {
-      b.addEventListener('click', function () { openHomeCard(b.dataset.open); });
+      b.addEventListener('pointerup', function () { openHomeCard(b.dataset.open); });
     });
     s.querySelectorAll('.pill .add').forEach(function (b) {
-      b.addEventListener('click', function () { show('shop'); buildShop(); });
+      b.addEventListener('pointerup', function () { show('shop'); buildShop(); });
     });
     var canvas = $('chapter-still');
     fitCanvas(canvas);
@@ -393,7 +400,6 @@
   }
 
   function libraryPower() { return save.towers.library * 0.05; }
-  function nurseryStart() { return save.towers.nursery; }
   function alchemyFreeReroll() { return save.towers.alchemy >= 2 ? 1 : 0; }
 
   // ---------------------------------------------------------------------
@@ -435,10 +441,10 @@
     });
     s.innerHTML = html;
     s.querySelectorAll('[data-upgrade]').forEach(function (btn) {
-      btn.addEventListener('click', function () { upgradeBuilding(btn.dataset.upgrade); });
+      btn.addEventListener('pointerup', function () { upgradeBuilding(btn.dataset.upgrade); });
     });
     var collectBtn = s.querySelector('[data-collect]');
-    if (collectBtn) collectBtn.addEventListener('click', collectHerb);
+    if (collectBtn) collectBtn.addEventListener('pointerup', collectHerb);
     refreshTopbars();
   }
 
@@ -472,50 +478,277 @@
   }
 
   // ---------------------------------------------------------------------
-  // Wizards
+  // Frog (like Gun Hero's Gear tab)
   // ---------------------------------------------------------------------
 
-  function buildWizards() {
-    var s = $('wizards');
-    var html = '<div class="topbar"><div style="font-family:\'Titan One\',sans-serif;font-size:20px">Wizards</div></div>' +
-      '<div class="panel card"><div style="font-size:13px">Every wizard has a named way to get them. No random draws.</div></div>';
-    WIZARDS.forEach(function (w) {
-      html += '<div class="panel card wizard-card">' +
-        '<div class="head">' +
-        '<div class="icon-box"><canvas class="wizard-portrait" data-hero="' + w.id + '" width="40" height="40"></canvas></div>' +
-        '<div class="grow"><div style="font-family:\'Titan One\',sans-serif;font-size:14px">' + w.name + ' <span style="font-size:10px">' + w.rarity + '</span></div>' +
-        '<div style="font-size:11px">' + w.skill + '</div>' +
-        '<div style="font-size:11px;font-style:italic">' + w.source + '</div></div>' +
-        (w.free ? '' : '<button type="button" class="btn-buy btn-small" data-buy-wizard="1">' + w.price + '</button>') +
-        '</div></div>';
+  function equippedGear() {
+    var equipped = {};
+    Meta.GEAR_SLOTS.forEach(function (slot) {
+      var i = save.meta.gear.equipped[slot];
+      equipped[slot] = (i === null || i === undefined) ? null : save.meta.gear.inventory[i];
     });
-    s.innerHTML = html;
-    s.querySelectorAll('.wizard-portrait').forEach(function (c) { drawPortrait2(c, c.dataset.hero); });
-    s.querySelectorAll('[data-buy-wizard]').forEach(function (b) { b.addEventListener('click', moneyToast); });
+    return equipped;
   }
-  function drawPortrait2(canvas, heroId) {
-    try { if (window.Art && Art.portrait) { Art.portrait(canvas, heroId); return; } } catch (e) { /* fall back below */ }
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#8FDB54'; ctx.beginPath(); ctx.arc(20, 20, 18, 0, 7); ctx.fill();
+
+  function buildFrog() {
+    var s = $('frog');
+    var equipped = equippedGear();
+    var stats = Meta.gearStats(equipped);
+    var inv = save.meta.gear.inventory;
+    var html = '<div class="topbar"><div style="font-family:\'Titan One\',sans-serif;font-size:20px">Frog</div></div>' +
+      '<div class="frog-stage-wrap">' +
+      '<canvas id="frog-stage-canvas"></canvas>' +
+      '<div class="frog-slots">' + Meta.GEAR_SLOTS.map(function (slot) {
+        var g = equipped[slot];
+        return '<button type="button" class="frog-slot-btn' + (g ? '' : ' empty') + '" data-slot="' + slot + '">' +
+          '<canvas class="frog-slot-canvas" data-slot-canvas="' + slot + '" width="56" height="56"></canvas>' +
+          '<div style="font-size:9px">' + (g ? 'Lv ' + g.level : slot) + '</div>' +
+          '</button>';
+      }).join('') + '</div>' +
+      '</div>' +
+      '<div class="panel card" style="text-align:center">Health ' + Math.round(100 + stats.hp) + '  Power +' + Math.round(stats.power * 100) + '%  Cast speed +' + Math.round(stats.rate * 100) + '%</div>' +
+      '<div class="shop-section-title">Storage</div>' +
+      '<div class="gear-inventory-grid">' + inv.map(function (piece, i) {
+        var isEquipped = Meta.GEAR_SLOTS.some(function (slot) { return save.meta.gear.equipped[slot] === i; });
+        return '<button type="button" class="panel gear-inv-card' + (isEquipped ? ' equipped' : '') + '" data-inv="' + i + '">' +
+          '<canvas class="gear-inv-canvas" data-inv-canvas="' + i + '" width="56" height="56"></canvas>' +
+          '<div class="tabular" style="font-size:9px">Lv ' + piece.level + '</div>' +
+          '</button>';
+      }).join('') + '</div>' +
+      '<button type="button" class="btn-go btn-block" id="frog-fuse" style="margin:10px 16px;width:calc(100% - 32px)">Fuse ' + Meta.FUSE_COUNT + ' identical pieces</button>' +
+      '<div class="shop-section-title">Sets</div>' +
+      Meta.SET_IDS.map(function (setId) {
+        var def = Meta.SETS[setId];
+        var owned = Meta.GEAR_SLOTS.filter(function (slot) { return equipped[slot] && Meta.GEAR[equipped[slot].id].set === setId; }).length;
+        return '<div class="panel card set-row">' +
+          '<div style="font-family:\'Titan One\',sans-serif;font-size:13px;color:' + def.color + '">' + def.name + '</div>' +
+          '<div class="set-icons">' + Meta.GEAR_SLOTS.map(function (slot) {
+            var has = inv.some(function (p) { return p.id === setId + '-' + slot; });
+            return '<canvas class="set-icon-canvas' + (has ? '' : ' dim') + '" data-set-icon-slot="' + slot + '" data-set-icon-set="' + setId + '" width="30" height="30"></canvas>';
+          }).join('') + '</div>' +
+          '<div style="font-size:11px' + (owned >= 2 ? ';font-weight:700' : '') + (owned >= 2 ? ';color:' + def.color : '') + '">2-piece: ' + def.twoText + '</div>' +
+          '<div style="font-size:11px' + (owned >= 4 ? ';font-weight:700' : '') + (owned >= 4 ? ';color:' + def.color : '') + '">4-piece: ' + def.fourText + '</div>' +
+          '</div>';
+      }).join('');
+    s.innerHTML = html;
+
+    var stage = $('frog-stage-canvas');
+    var r = fitCanvas(stage);
+    var sctx = stage.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var sSize = Math.min(r.width, r.height) * 0.62 * dpr;
+    try {
+      if (window.Art && Art.frogFront) {
+        var tint = {
+          hat: equipped.hat ? Meta.GEAR[equipped.hat.id].set : null,
+          robe: equipped.robe ? Meta.GEAR[equipped.robe.id].set : null,
+        };
+        Art.frogFront(sctx, stage.width / 2, stage.height * 0.5 + sSize * 0.30, sSize, Art.COLORS.skinLeaf, '#5B6CFF', Art.COLORS.robe, 0, 'tree', tint);
+      }
+    } catch (e) { /* fall back below: an empty stage is fine in the prototype */ }
+
+    s.querySelectorAll('.frog-slot-canvas').forEach(function (c) {
+      var slot = c.dataset.slotCanvas;
+      var g = equipped[slot];
+      var ctx2 = c.getContext('2d');
+      if (g) { try { if (window.Art && Art.gearIcon) Art.gearIcon(ctx2, c.width / 2, c.height * 0.86, c.height * 0.72, slot, g.rarity, Meta.GEAR[g.id].set); } catch (e) { /* ignore */ } }
+      else { ctx2.strokeStyle = '#8A7A9A'; ctx2.lineWidth = 2; ctx2.strokeRect(6, 6, c.width - 12, c.height - 12); }
+    });
+    s.querySelectorAll('.gear-inv-canvas').forEach(function (c) {
+      var piece = inv[Number(c.dataset.invCanvas)];
+      var def = Meta.GEAR[piece.id];
+      var ctx2 = c.getContext('2d');
+      try { if (window.Art && Art.gearIcon) Art.gearIcon(ctx2, c.width / 2, c.height * 0.86, c.height * 0.72, def.slot, piece.rarity, def.set); } catch (e) { /* ignore */ }
+    });
+    s.querySelectorAll('.set-icon-canvas').forEach(function (c) {
+      var ctx2 = c.getContext('2d');
+      try { if (window.Art && Art.gearIcon) Art.gearIcon(ctx2, c.width / 2, c.height * 0.86, c.height * 0.72, c.dataset.setIconSlot, 'common', c.dataset.setIconSet); } catch (e) { /* ignore */ }
+    });
+
+    s.querySelectorAll('[data-slot]').forEach(function (b) {
+      b.addEventListener('pointerup', function () {
+        var slot = b.dataset.slot;
+        var i = save.meta.gear.equipped[slot];
+        if (i === null || i === undefined) { toast('Nothing equipped in that slot'); return; }
+        openGearDetail(i);
+      });
+    });
+    s.querySelectorAll('[data-inv]').forEach(function (b) {
+      b.addEventListener('pointerup', function () { openGearDetail(Number(b.dataset.inv)); });
+    });
+    $('frog-fuse').addEventListener('pointerup', fuseGear);
+  }
+
+  function openGearDetail(idx) {
+    var inv = save.meta.gear.inventory;
+    var piece = inv[idx];
+    var def = Meta.GEAR[piece.id];
+    var rarityDef = Meta.RARITIES.find(function (r) { return r.id === piece.rarity; }) || Meta.RARITIES[0];
+    var isEquipped = save.meta.gear.equipped[def.slot] === idx;
+    var next = piece.level < Meta.GEAR_MAX_LEVEL ? Meta.gearLevelCost(piece.level) : null;
+    var s = $('gear-detail');
+    s.innerHTML = '<div class="panel" style="width:300px;max-width:88vw;text-align:center">' +
+      '<button type="button" class="ad-close" id="gear-detail-close" aria-label="close">' + icon('i-close') + '</button>' +
+      '<canvas id="gear-detail-canvas" width="100" height="100"></canvas>' +
+      '<div style="font-family:\'Titan One\',sans-serif;font-size:14px;color:' + rarityDef.color + '">' + def.name + '</div>' +
+      '<div style="font-size:11px">' + rarityDef.name + ', Lv ' + piece.level + '</div>' +
+      '<div class="row" style="justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap">' +
+      (isEquipped
+        ? '<button type="button" class="btn-ghost btn-small" id="gear-unequip">Unequip</button>'
+        : '<button type="button" class="btn-go btn-small" id="gear-equip">Equip</button>') +
+      (next
+        ? '<button type="button" class="btn-buy btn-small" id="gear-upgrade"' + (save.coins < next.coins ? ' disabled' : '') + '>Upgrade: ' + fmt(next.coins) + ' coins</button>'
+        : '<span style="font-size:11px;font-family:\'Kreon\',Georgia,serif;font-weight:700">Max level</span>') +
+      '</div></div>';
+    s.classList.add('on');
+    var canvas = $('gear-detail-canvas');
+    try { if (window.Art && Art.gearIcon) Art.gearIcon(canvas.getContext('2d'), canvas.width / 2, canvas.height * 0.86, canvas.height * 0.72, def.slot, piece.rarity, def.set); } catch (e) { /* ignore */ }
+    $('gear-detail-close').addEventListener('pointerup', function () { s.classList.remove('on'); });
+    var eq = $('gear-equip');
+    if (eq) eq.addEventListener('pointerup', function () { save.meta.gear.equipped[def.slot] = idx; persist(); s.classList.remove('on'); buildFrog(); });
+    var uq = $('gear-unequip');
+    if (uq) uq.addEventListener('pointerup', function () { save.meta.gear.equipped[def.slot] = null; persist(); s.classList.remove('on'); buildFrog(); });
+    var up = $('gear-upgrade');
+    if (up) up.addEventListener('pointerup', function () {
+      if (save.coins < next.coins) return;
+      save.coins -= next.coins; piece.level++;
+      persist(); refreshTopbars();
+      openGearDetail(idx); buildFrog();
+    });
+  }
+
+  // Merges every set of Meta.FUSE_COUNT identical pieces (same id and rarity) into
+  // one piece of the next rarity, unequipping and reindexing as it removes pieces.
+  function fuseGear() {
+    var inv = save.meta.gear.inventory;
+    var rarityOrder = Meta.RARITIES.map(function (r) { return r.id; });
+    var groups = {};
+    inv.forEach(function (p, i) { var key = p.id + '|' + p.rarity; (groups[key] = groups[key] || []).push(i); });
+    var fused = false;
+    Object.keys(groups).forEach(function (key) {
+      var idxs = groups[key].slice();
+      while (idxs.length >= Meta.FUSE_COUNT) {
+        var take = idxs.splice(0, Meta.FUSE_COUNT);
+        var sample = inv[take[0]];
+        var nextIdx = rarityOrder.indexOf(sample.rarity) + 1;
+        if (nextIdx >= rarityOrder.length) break;
+        take.sort(function (a, b) { return b - a; }).forEach(function (rmIdx) {
+          Meta.GEAR_SLOTS.forEach(function (slot) {
+            if (save.meta.gear.equipped[slot] === rmIdx) save.meta.gear.equipped[slot] = null;
+            else if (save.meta.gear.equipped[slot] > rmIdx) save.meta.gear.equipped[slot]--;
+          });
+          inv.splice(rmIdx, 1);
+        });
+        inv.push({ id: sample.id, rarity: rarityOrder[nextIdx], level: 1 });
+        fused = true;
+      }
+    });
+    if (fused) { persist(); toast('Fused into a higher rarity'); buildFrog(); }
+    else toast('Need ' + Meta.FUSE_COUNT + ' identical pieces to fuse');
   }
 
   // ---------------------------------------------------------------------
-  // Shop
+  // Shop, laid out like Gun Hero's shop
   // ---------------------------------------------------------------------
+
+  var chainOfferDeadline = Date.now() + (23 * 3600 + 41 * 60 + 10) * 1000;
 
   function buildShop() {
     var s = $('shop');
     var html = '<div class="topbar"><div style="font-family:\'Titan One\',sans-serif;font-size:20px">Shop</div>' +
-      '<div class="currencies">' + currencyPill('i-coin', 'coins', fmt(save.coins), false) + currencyPill('i-gem', 'gems', fmt(save.gems), false) + '</div></div>';
-    SHOP_ITEMS.forEach(function (it) {
-      html += '<div class="panel card shop-card row between">' +
-        '<div class="col" style="gap:2px"><div style="font-family:\'Titan One\',sans-serif;font-size:13px">' + it.name + '</div><div style="font-size:11px">' + it.desc + '</div></div>' +
-        '<button type="button" class="btn-buy btn-small" data-buy="1">' + it.price + '</button>' +
-        '</div>';
-    });
+      '<div class="currencies">' + currencyPill('i-coin', 'coins', fmt(save.coins), false) + currencyPill('i-gem', 'gems', fmt(save.gems), false) + '</div></div>' +
+
+      '<div class="panel card offer-banner">' +
+      '<div style="font-family:\'Titan One\',sans-serif;font-size:14px">' + CHAIN_OFFER.name + '</div>' +
+      '<div style="font-size:12px;margin-top:2px">' + CHAIN_OFFER.desc + '</div>' +
+      '<div class="offer-countdown">Ends in <span id="shop-countdown"></span></div>' +
+      '<button type="button" class="btn-buy btn-block" style="margin-top:8px" data-buy="1">' + CHAIN_OFFER.price + '</button>' +
+      '</div>' +
+
+      '<div class="shop-section-title">Daily shop</div>' +
+      '<div class="daily-shop-grid">' + DAILY_SHOP_CARDS.map(function (c, i) {
+        return '<div class="panel card daily-shop-card">' +
+          '<canvas class="shop-item-canvas" data-kind="' + c.kind + '" data-id="' + (c.id || '') + '" data-rarity="' + (c.rarity || '') + '" data-tier="' + (c.tier || '') + '" width="72" height="72"></canvas>' +
+          '<div style="font-size:11px;margin-top:4px">' + c.label + '</div>' +
+          (c.free
+            ? '<button type="button" class="btn-ad btn-small" data-daily-free="' + i + '" style="margin-top:6px">' + icon('i-ad', 'icon-ad') + ' Free</button>'
+            : '<button type="button" class="btn-buy btn-small" data-daily-buy="' + i + '" style="margin-top:6px">' + fmt(c.price) + ' coins</button>') +
+          '</div>';
+      }).join('') + '</div>' +
+
+      '<div class="shop-section-title">Chests: exactly what is inside</div>' +
+      CHESTS.map(function (c) {
+        return '<div class="panel card shop-card row between">' +
+          '<div class="col" style="gap:2px"><div style="font-family:\'Titan One\',sans-serif;font-size:13px">' + c.name + '</div><div style="font-size:11px">' + c.contains + '</div></div>' +
+          '<button type="button" class="btn-buy btn-small" data-buy="1">' + c.price + ' gems</button>' +
+          '</div>';
+      }).join('') +
+
+      '<div class="shop-section-title">Passes and bundles</div>' +
+      MONEY_ITEMS.map(function (it) {
+        return '<div class="panel card shop-card row between">' +
+          '<div class="col" style="gap:2px"><div style="font-family:\'Titan One\',sans-serif;font-size:13px">' + it.name + '</div><div style="font-size:11px">' + it.desc + '</div></div>' +
+          '<button type="button" class="btn-buy btn-small" data-buy="1">' + it.price + '</button>' +
+          '</div>';
+      }).join('') +
+
+      '<div class="shop-section-title">Gems</div>' +
+      '<div class="gem-pack-row">' + GEM_PACKS.map(function (g) {
+        return '<div class="panel card gem-pack-card" data-gem-buy="' + g.gems + '">' +
+          icon('i-gem', 'gem-pack-icon') +
+          '<div style="font-size:12px;margin-top:2px">' + fmt(g.gems) + '</div>' +
+          '<button type="button" class="btn-buy btn-small" style="margin-top:6px">' + g.price + '</button>' +
+          '</div>';
+      }).join('') + '</div>';
     s.innerHTML = html;
-    s.querySelectorAll('[data-buy]').forEach(function (b) { b.addEventListener('click', moneyToast); });
+    s.querySelectorAll('[data-buy]').forEach(function (b) { b.addEventListener('pointerup', moneyToast); });
+    s.querySelectorAll('[data-daily-free]').forEach(function (b) {
+      b.addEventListener('pointerup', function () { showAd('rewarded', DAILY_SHOP_CARDS[Number(b.dataset.dailyFree)].label, function () { toast('Received: ' + DAILY_SHOP_CARDS[Number(b.dataset.dailyFree)].label); }); });
+    });
+    s.querySelectorAll('[data-daily-buy]').forEach(function (b) {
+      b.addEventListener('pointerup', function () {
+        var it = DAILY_SHOP_CARDS[Number(b.dataset.dailyBuy)];
+        if (save.coins < it.price) { toast('Not enough coins'); return; }
+        save.coins -= it.price; persist(); refreshTopbars();
+        toast('Received: ' + it.label);
+      });
+    });
+    s.querySelectorAll('[data-gem-buy]').forEach(function (b) {
+      b.addEventListener('pointerup', function () { gems(Number(b.dataset.gemBuy)); toast('Purchases are not live: gems added for testing'); });
+    });
+    s.querySelectorAll('.shop-item-canvas').forEach(drawShopItemCanvas);
     refreshTopbars();
+    updateShopCountdown();
+    if (shopCountdownTimer) clearInterval(shopCountdownTimer);
+    shopCountdownTimer = setInterval(function () {
+      if (!$('shop-countdown')) { clearInterval(shopCountdownTimer); return; }
+      updateShopCountdown();
+    }, 1000);
+  }
+
+  var shopCountdownTimer = null;
+  function updateShopCountdown() {
+    var el2 = $('shop-countdown');
+    if (!el2) return;
+    var remain = Math.max(0, chainOfferDeadline - Date.now());
+    var hh = Math.floor(remain / 3600000);
+    var mm = Math.floor((remain % 3600000) / 60000);
+    var ss = Math.floor((remain % 60000) / 1000);
+    el2.textContent = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  }
+
+  function drawShopItemCanvas(canvas) {
+    var ctx = canvas.getContext('2d');
+    var kind = canvas.dataset.kind;
+    try {
+      if (kind === 'crate' && window.Art && Art.card) { Art.card(ctx, canvas.width / 2, 0, canvas.width, canvas.height, 'spawn', Number(canvas.dataset.tier) || 2); return; }
+      if (kind === 'gear' && window.Art && Art.gearIcon) {
+        var piece = Meta.GEAR[canvas.dataset.id];
+        Art.gearIcon(ctx, canvas.width / 2, canvas.height * 0.82, canvas.height * 0.7, piece.slot, canvas.dataset.rarity, piece.set);
+        return;
+      }
+    } catch (e) { /* fall back below */ }
+    ctx.fillStyle = '#D8DCE8'; ctx.fillRect(4, 4, canvas.width - 8, canvas.height - 8);
   }
 
   // ---------------------------------------------------------------------
@@ -524,11 +757,13 @@
 
   function buildPass() {
     var s = $('pass');
-    s.innerHTML = '<div class="topbar"><div style="font-family:\'Titan One\',sans-serif;font-size:20px">Pass</div></div>' +
+    s.innerHTML = '<div class="topbar"><button type="button" class="btn-ghost btn-small" data-back="home">Back</button>' +
+      '<div style="font-family:\'Titan One\',sans-serif;font-size:18px;margin-left:8px">Pass</div></div>' +
       '<div class="locked-block">' + icon('i-lock') +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:18px">Seasons arrive after launch</div>' +
-      '<div style="font-size:13px;margin-top:8px">A 4-week theme, a premium track and a new wizard (Morgana, tier 30).</div>' +
+      '<div style="font-size:13px;margin-top:8px">A 4-week theme and a premium track.</div>' +
       '</div>';
+    s.querySelector('[data-back]').addEventListener('pointerup', function () { show('home'); buildHome(); });
   }
 
   // ---------------------------------------------------------------------
@@ -537,21 +772,80 @@
 
   function buildSpellbook() {
     var s = $('spellbook');
-    var found = Object.keys(save.spellbook).length;
-    var html = '<div class="topbar"><button type="button" class="btn-ghost btn-small" data-back="home">Back</button>' +
-      '<div style="font-family:\'Titan One\',sans-serif;font-size:18px;margin-left:8px">Spell book (' + found + ' / ' + SPELLS.length + ')</div></div>' +
+    var html = '<div class="topbar"><div style="font-family:\'Titan One\',sans-serif;font-size:20px">Spell Book</div></div>' +
       '<div class="spellbook-grid">';
-    SPELLS.forEach(function (sp) {
-      var known = !!save.spellbook[sp.name];
-      html += '<div class="parchment spell-page' + (known ? '' : ' blank') + '">' +
-        (known
-          ? '<div class="name">' + sp.name + '</div><div>' + sp.elements.map(function (e) { return '<span class="elem-dot" style="background:' + ELEM_COLOR[e] + '"></span>'; }).join('') + '</div>'
-          : '<div class="name">?</div>') +
+    Meta.SPELL_TYPES.forEach(function (t) {
+      var sp = Meta.SPELLS[t];
+      var sv = save.meta.spells[t];
+      html += '<div class="panel spell-tile' + (sv.unlocked ? '' : ' locked') + '" data-spell="' + t + '" style="border-color:' + ELEM_COLOR[sp.element] + '">' +
+        '<canvas class="spell-tile-canvas" data-spell-icon="' + t + '" width="64" height="64"></canvas>' +
+        '<div class="name">' + (sv.unlocked ? sp.name : '?') + '</div>' +
+        (sv.unlocked ? '<div class="tabular" style="font-size:10px">Lv ' + sv.level + '</div>' : '<div style="font-size:9px">Reach Apprentice</div>') +
         '</div>';
+    });
+    html += '</div><div class="shop-section-title">Unlocks later</div><div class="spellbook-grid">';
+    Meta.LOCKED_SPELLS.forEach(function (name) {
+      html += '<div class="panel spell-tile locked dim">' +
+        '<div class="name">?</div><div style="font-size:9px">' + name + '</div><div style="font-size:9px">Unlocks later</div></div>';
     });
     html += '</div>';
     s.innerHTML = html;
-    s.querySelector('[data-back]').addEventListener('click', function () { show('home'); buildHome(); });
+    s.querySelectorAll('.spell-tile-canvas').forEach(drawSpellIcon);
+    s.querySelectorAll('[data-spell]').forEach(function (t) {
+      t.addEventListener('pointerup', function () { openSpellDetail(t.dataset.spell); });
+    });
+  }
+
+  function drawSpellIcon(canvas) {
+    var type = canvas.dataset.spellIcon;
+    var sp = Meta.SPELLS[type];
+    if (!sp) return;
+    var ctx = canvas.getContext('2d');
+    try { if (window.Art && Art.bolt) { Art.bolt(ctx, canvas.width / 2, canvas.height / 2, canvas.width * 0.75, sp.element, 0, 0); return; } } catch (e) { /* fall back below */ }
+    ctx.fillStyle = '#D8DCE8'; ctx.fillRect(4, 4, canvas.width - 8, canvas.height - 8);
+  }
+
+  function openSpellDetail(type) {
+    var sp = Meta.SPELLS[type];
+    var sv = save.meta.spells[type];
+    if (!sv.unlocked) { toast('Reach Apprentice to unlock ' + sp.name); return; }
+    var level = sv.level;
+    var dmgAt = function (lvl) { return sp.dmg * (1 + Meta.levelBonus(lvl)); };
+    var next = level < Meta.MAX_LEVEL ? level + 1 : null;
+    var cost = next ? Meta.levelCost(level) : null;
+    var reason = '';
+    if (cost) {
+      if (save.coins < cost.coins) reason = 'not enough coins';
+      else if (save.gems < cost.gems) reason = 'not enough gems';
+    }
+    var s = $('spell-detail');
+    s.innerHTML = '<div class="panel" style="width:300px;max-width:88vw;text-align:center">' +
+      '<button type="button" class="ad-close" id="spell-detail-close" aria-label="close">' + icon('i-close') + '</button>' +
+      '<canvas id="spell-detail-canvas" width="90" height="90"></canvas>' +
+      '<div style="font-family:\'Titan One\',sans-serif;font-size:16px">' + sp.name + '</div>' +
+      '<div style="font-size:11px;text-transform:capitalize">' + sp.element + '</div>' +
+      '<div style="font-size:12px;margin-top:6px">' + sp.text + '</div>' +
+      '<div class="stat-line"><span>Damage now</span><span class="tabular">' + dmgAt(level).toFixed(1) + '</span></div>' +
+      (next ? '<div class="stat-line"><span>Damage at Lv ' + next + '</span><span class="tabular">' + dmgAt(next).toFixed(1) + '</span></div>' : '') +
+      '<div class="stat-line"><span>Cast rate</span><span class="tabular">' + sp.rate.toFixed(1) + '/s</span></div>' +
+      (next
+        ? '<button type="button" class="btn-go btn-block" style="margin-top:10px" id="spell-upgrade"' + (reason ? ' disabled' : '') + '>' +
+          'Upgrade: ' + fmt(cost.coins) + ' coins' + (cost.gems ? ' + ' + cost.gems + ' gems' : '') + (reason ? ' (' + reason + ')' : '') + '</button>'
+        : '<div style="margin-top:10px;font-family:\'Kreon\',Georgia,serif;font-weight:700">Max level</div>') +
+      '</div>';
+    s.classList.add('on');
+    var canvas = $('spell-detail-canvas');
+    canvas.dataset.spellIcon = type;
+    drawSpellIcon(canvas);
+    $('spell-detail-close').addEventListener('pointerup', function () { s.classList.remove('on'); });
+    var up = $('spell-upgrade');
+    if (up) up.addEventListener('pointerup', function () {
+      if (save.coins < cost.coins || save.gems < cost.gems) return;
+      save.coins -= cost.coins; save.gems -= cost.gems;
+      sv.level++;
+      persist(); refreshTopbars();
+      openSpellDetail(type); buildSpellbook();
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -579,12 +873,12 @@
       '<button type="button" class="btn-go grow" id="daily-claim"' + (ready ? '' : ' disabled') + '>Claim</button>' +
       '<button type="button" class="btn-ad grow" id="daily-claim2"' + (ready ? '' : ' disabled') + '>' + icon('i-ad', 'icon-ad') + ' Claim x2</button>' +
       '</div>' +
-      (ready ? '' : '<div class="panel card" id="daily-msg" style="text-align:center">Come back tomorrow for Sergeant Croak.</div>');
+      (ready ? '' : '<div class="panel card" id="daily-msg" style="text-align:center">Come back tomorrow for the next reward.</div>');
     s.innerHTML = html;
-    s.querySelector('[data-back]').addEventListener('click', function () { show('home'); buildHome(); });
+    s.querySelector('[data-back]').addEventListener('pointerup', function () { show('home'); buildHome(); });
     var b1 = $('daily-claim'), b2 = $('daily-claim2');
-    if (b1) b1.addEventListener('click', function () { claimDaily(1); });
-    if (b2) b2.addEventListener('click', function () { showAd('rewarded', 'double the daily reward', function () { claimDaily(2); }); });
+    if (b1) b1.addEventListener('pointerup', function () { claimDaily(1); });
+    if (b2) b2.addEventListener('pointerup', function () { showAd('rewarded', 'double the daily reward', function () { claimDaily(2); }); });
     s.querySelectorAll('.daily-ing-card').forEach(drawIngredientCard);
   }
 
@@ -634,25 +928,33 @@
       '<div style="font-size:13px">One run, one seed, shared by everyone today.</div>' +
       '<button type="button" class="btn-go" id="dailybrew-start" style="margin-top:10px">Play today\'s brew</button>' +
       '</div>';
-    s.querySelector('[data-back]').addEventListener('click', function () { show('home'); buildHome(); });
-    $('dailybrew-start').addEventListener('click', function () { startRun({ seed: dailySeed(), dailyBrew: true }); });
+    s.querySelector('[data-back]').addEventListener('pointerup', function () { show('home'); buildHome(); });
+    $('dailybrew-start').addEventListener('pointerup', function () { startRun({ seed: dailySeed(), dailyBrew: true }); });
+  }
+
+  // The names and elements of every spell currently held (up to Meta.MAX_SPELLS).
+  function heldSpells(run) {
+    return (run.spells || []).filter(function (sp) { return sp; }).map(function (sp) {
+      var def = Meta.SPELLS[sp.type] || {};
+      return { name: def.name || sp.type, element: def.element };
+    });
   }
 
   function buildDailyBrewShare(run) {
     var s = $('dailybrew');
-    var stats = run.stats || { spell: 'Ember Bolt', elements: [] };
-    var count = run.apprentices != null ? run.apprentices : (run.count || 0);
+    var held = heldSpells(run);
+    var primary = held[0] ? held[0].name : 'Magic Missile';
     s.innerHTML = '<div class="topbar"><button type="button" class="btn-ghost btn-small" data-back="home">Back</button>' +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:18px;margin-left:8px">Daily Brew</div></div>' +
       '<div class="panel card" style="text-align:center">' +
       '<canvas id="brew-share-canvas" width="300" height="220" style="width:100%;border-radius:10px;border:3px solid var(--ink)"></canvas>' +
       '<button type="button" class="btn-go btn-small" id="brew-copy" style="margin-top:10px">Copy text</button>' +
       '</div>';
-    s.querySelector('[data-back]').addEventListener('click', function () { show('home'); buildHome(); });
+    s.querySelector('[data-back]').addEventListener('pointerup', function () { show('home'); buildHome(); });
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var d = new Date();
     var dateLabel = d.getDate() + ' ' + months[d.getMonth()];
-    var shareText = 'Magic Frogs Daily Brew, ' + dateLabel + '\nWave ' + run.wave + ', ' + stats.spell + ', ' + fmt(count) + ' wizards';
+    var shareText = 'Magic Frogs Daily Brew, ' + dateLabel + '\nWave ' + run.wave + ', ' + primary + ', ' + held.length + ' spells held';
     var canvas = $('brew-share-canvas');
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#FFF7E8'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -662,14 +964,14 @@
     ctx.font = '800 22px "Titan One", sans-serif';
     ctx.fillText('Wave ' + run.wave, 14, 70);
     ctx.font = '400 15px "Kreon", Georgia, serif';
-    ctx.fillText(stats.spell || 'Ember Bolt', 14, 100);
-    (stats.elements || []).forEach(function (e, i) {
-      ctx.fillStyle = { fire: '#FF7A2F', ice: '#6FE3FF', poison: '#8CFF3F', blast: '#C35CFF', storm: '#FFE14A' }[e] || '#FF7BD5';
+    ctx.fillText(primary, 14, 100);
+    held.forEach(function (sp, i) {
+      ctx.fillStyle = { fire: '#FF7A2F', ice: '#6FE3FF', poison: '#8CFF3F', blast: '#C35CFF', storm: '#FFE14A' }[sp.element] || '#FF7BD5';
       ctx.beginPath(); ctx.arc(20 + i * 20, 120, 7, 0, 7); ctx.fill();
     });
     ctx.fillStyle = '#241B3A'; ctx.font = '400 15px "Kreon", Georgia, serif';
-    ctx.fillText(fmt(count) + ' apprentices', 14, 150);
-    $('brew-copy').addEventListener('click', function () {
+    ctx.fillText(held.length + ' spells held', 14, 150);
+    $('brew-copy').addEventListener('pointerup', function () {
       try {
         navigator.clipboard.writeText(shareText);
         toast('Copied');
@@ -695,7 +997,7 @@
       '<div class="panel">' +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:16px">Chapter 1: Bog Road</div>' +
       '<div style="font-size:13px;margin-top:4px">Rank: ' + rank.name + '. Lowest ingredient tier: ' + rank.tier + '</div>' +
-      '<button type="button" class="btn-ad btn-block" style="margin-top:14px" id="pre-ad">' + icon('i-ad', 'icon-ad') + ' Start with 2 apprentices</button>' +
+      '<button type="button" class="btn-ad btn-block" style="margin-top:14px" id="pre-ad">' + icon('i-ad', 'icon-ad') + ' Start with +20 max health</button>' +
       '<div class="row" style="margin-top:10px;gap:10px">' +
       '<canvas id="pre-ing-card" width="60" height="60" style="width:36px;height:36px;flex:0 0 auto"></canvas>' +
       '<button type="button" class="btn-buy grow" id="pre-buy">Start with a tier 2 ingredient: 30 gems</button>' +
@@ -704,31 +1006,31 @@
       '</div>';
     save.prerunExtra = null;
     drawIngredientCard($('pre-ing-card'));
-    $('pre-ad').addEventListener('click', function () {
-      showAd('rewarded', '2 extra apprentices', function () { save.prerunExtra = { apprentices: 2 }; toast('Extra apprentices ready'); });
+    $('pre-ad').addEventListener('pointerup', function () {
+      showAd('rewarded', '+20 max health', function () { save.prerunExtra = Object.assign({}, save.prerunExtra, { healthBoost: 20 }); toast('Health boost ready'); });
     });
-    $('pre-buy').addEventListener('click', function () {
+    $('pre-buy').addEventListener('pointerup', function () {
       if (save.gems < 30) { toast('Not enough gems'); return; }
       save.gems -= 30; persist(); refreshTopbars();
       save.prerunExtra = Object.assign({}, save.prerunExtra, { tier2: true });
       toast('Tier 2 ingredient ready');
     });
-    $('pre-start').addEventListener('click', function () { startRun({}); });
+    $('pre-start').addEventListener('pointerup', function () { startRun({}); });
   }
 
   // ---------------------------------------------------------------------
   // Meta -> run options
   // ---------------------------------------------------------------------
 
+  // The save's rank index (0-based) into Meta.RANKS (1-based), plus the Healer's
+  // Hut tower and any pre-run extras, folded into what SimB.createRun expects.
   function metaFromSave() {
-    var rank = RANKS[save.rank];
     var extra = save.prerunExtra || {};
-    return {
-      apprenticeStart: 1 + nurseryStart() + (extra.apprentices || 0),
-      minTier: extra.tier2 ? Math.max(rank.tier, 2) : rank.tier,
-      unlocked: (window.Sim ? Sim.ING_TYPES.slice() : ['ember', 'frost', 'shade', 'blast', 'storm', 'moon', 'quick', 'spawn']),
-      power: libraryPower(),
-    };
+    var meta = Meta.runMeta(save.meta, save.rank || 1);
+    meta.gear.hp += save.towers.nursery * 10;         // Healer's Hut: +10 max health per level
+    if (extra.healthBoost) meta.gear.hp += extra.healthBoost;
+    if (extra.tier2) meta.minTier = Math.max(meta.minTier, 2);
+    return meta;
   }
 
   // ---------------------------------------------------------------------
@@ -770,11 +1072,19 @@
     var step = revivesThisRun;
     var canAd = step < CONFIG.revive_ads_per_run;
     var canGem = step === CONFIG.revive_ads_per_run && save.gems >= CONFIG.revive_gem_cost;
+    var spellCells = (run.spells || []).filter(function (sp) { return sp; }).map(function (sp) {
+      var name = (Meta.SPELLS[sp.type] || {}).name || sp.type;
+      return '<div class="cell" style="background:var(--t' + sp.tier + ');font-size:8px;text-align:center;overflow:hidden">' + name + ' T' + sp.tier + '</div>';
+    }).join('');
+    var potCells = (run.pot || []).filter(function (ing) { return ing; }).map(function (ing) {
+      return '<div class="cell" style="background:var(--t' + ing.tier + ')"></div>';
+    }).join('');
     s.innerHTML = '<div class="panel">' +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:16px">Pip fell on wave ' + run.wave + '</div>' +
-      '<div style="font-size:12px;margin-top:4px">' + (run.stats ? run.stats.spell : '') + '</div>' +
-      '<div class="cauldron-row">' + run.grid.map(function (p) { return '<div class="cell" style="' + (p ? 'background:var(--t' + p.tier + ')' : '') + '"></div>'; }).join('') + '</div>' +
-      '<div style="font-size:12px">Apprentices: ' + (run.apprentices || 0) + '</div>' +
+      '<div style="font-size:11px;margin-top:4px">Spells</div>' +
+      '<div class="cauldron-row">' + spellCells + '</div>' +
+      '<div style="font-size:11px;margin-top:4px">Pot</div>' +
+      '<div class="cauldron-row">' + potCells + '</div>' +
       (canAd ? '<button type="button" class="btn-ad btn-block" style="margin-top:12px" id="revive-ad">' + icon('i-ad', 'icon-ad') + ' Revive: refills health</button>' : '') +
       (!canAd && canGem ? '<button type="button" class="btn-buy btn-block" style="margin-top:12px" id="revive-gem">Revive: ' + CONFIG.revive_gem_cost + ' gems</button>' : '') +
       '<button type="button" class="btn-text" id="revive-end" style="margin-top:12px">End run and keep ' + fmt(run.coins) + ' coins</button>' +
@@ -782,7 +1092,7 @@
       '</div>';
     s.classList.add('on');
     var adBtn = $('revive-ad'), gemBtn = $('revive-gem'), endBtn = $('revive-end');
-    if (adBtn) adBtn.addEventListener('click', function () {
+    if (adBtn) adBtn.addEventListener('pointerup', function () {
       showAd('rewarded', 'a full revive', function () {
         revivesThisRun++;
         s.classList.remove('on');
@@ -790,14 +1100,14 @@
         try { RunB.resume(); } catch (e) { /* ignore */ }
       });
     });
-    if (gemBtn) gemBtn.addEventListener('click', function () {
+    if (gemBtn) gemBtn.addEventListener('pointerup', function () {
       save.gems -= CONFIG.revive_gem_cost; persist(); refreshTopbars();
       revivesThisRun++;
       s.classList.remove('on');
       SimB.revive(run);
       try { RunB.resume(); } catch (e) { /* ignore */ }
     });
-    endBtn.addEventListener('click', function () {
+    endBtn.addEventListener('pointerup', function () {
       s.classList.remove('on');
       onRunEnd(run);
     });
@@ -810,7 +1120,7 @@
     save.rankXp += (run.wave || 1) * 15;
     while (RANKS[save.rank + 1] && save.rankXp >= RANKS[save.rank + 1].xp) save.rank++;
     save.bestWave = Math.max(save.bestWave, run.wave || 0);
-    save.lastPeak = run.peak || run.apprentices || 0;
+    save.lastPeak = run.peak || 0;
     save.lastSpell = run.stats ? run.stats.spell : null;
     save.runsCompleted++;
     save.prerunExtra = null;
@@ -834,11 +1144,11 @@
       '<button type="button" class="btn-go btn-block" style="margin-top:10px" id="res-continue">Continue</button>' +
       '</div>';
     var doubled = false;
-    $('res-double').addEventListener('click', function () {
+    $('res-double').addEventListener('pointerup', function () {
       if (doubled) return;
       showAd('rewarded', 'double coins', function () { doubled = true; coins(run.coins || 0); toast('Coins doubled'); });
     });
-    $('res-continue').addEventListener('click', function () { continueFromResults(); });
+    $('res-continue').addEventListener('pointerup', function () { continueFromResults(); });
   }
 
   function continueFromResults() {
@@ -873,7 +1183,7 @@
       var cd = $('ad-countdown'); if (cd) cd.textContent = isRewarded ? 'Reward: ' + rewardText : '';
       var close = el('<button type="button" class="ad-close" aria-label="close">' + icon('i-close') + '</button>');
       panel.appendChild(close);
-      close.addEventListener('click', function () {
+      close.addEventListener('pointerup', function () {
         s.classList.remove('on');
         s.innerHTML = '';
         if (onDone) onDone();
@@ -910,28 +1220,29 @@
       '<button type="button" class="btn-ghost btn-small" id="dbg-reset">Reset save</button>' +
       '<button type="button" class="btn-go btn-small" id="dbg-close">Close</button>' +
       '</div></div>';
-    $('dbg-appopen').addEventListener('click', function () { showAd('appopen', null, function () {}); });
-    $('dbg-w12').addEventListener('click', function () { jumpToStrongBuild(); });
-    $('dbg-death').addEventListener('click', function () {
+    $('dbg-appopen').addEventListener('pointerup', function () { showAd('appopen', null, function () {}); });
+    $('dbg-w12').addEventListener('pointerup', function () { jumpToStrongBuild(); });
+    $('dbg-death').addEventListener('pointerup', function () {
       if (activeRun) { activeRun.frog ? (activeRun.frog.hp = 0) : null; activeRun.state = 'dead'; onRunDead(activeRun); }
       else toast('No run in progress');
     });
-    $('dbg-reset').addEventListener('click', function () { resetSave(); toast('Save reset'); buildHome(); });
-    $('dbg-close').addEventListener('click', function () { s.classList.remove('on'); });
+    $('dbg-reset').addEventListener('pointerup', function () { resetSave(); toast('Save reset'); buildHome(); });
+    $('dbg-close').addEventListener('pointerup', function () { s.classList.remove('on'); });
   }
 
-  // The strong build from the spec: tier 4 ember, tier 4 blast, tier 3 moon, tier 3 quick,
-  // tier 3 storm, tier 2 shade; core B 12 apprentices.
-  var STRONG_BUILD = [
-    { type: 'ember', tier: 4 }, { type: 'blast', tier: 4 }, { type: 'moon', tier: 3 },
-    { type: 'quick', tier: 3 }, { type: 'storm', tier: 3 }, { type: 'shade', tier: 2 },
+  // The strong build from the spec: tier 4 ember, tier 4 blast, tier 3 frost, tier 3
+  // missile, each with one ingredient applied.
+  var STRONG_SPELLS = [
+    { type: 'ember', tier: 4, ings: [{ type: 'ember', tier: 2 }, null] },
+    { type: 'blast', tier: 4, ings: [{ type: 'blast', tier: 2 }, null] },
+    { type: 'frost', tier: 3, ings: [{ type: 'frost', tier: 2 }, null] },
+    { type: 'missile', tier: 3, ings: [{ type: 'moon', tier: 2 }, null] },
   ];
   function jumpToStrongBuild() {
     startRun({ seed: 1 });
     if (activeRun) {
-      activeRun.grid = STRONG_BUILD.slice();
-      while (activeRun.grid.length < 12) activeRun.grid.push(null);
-      activeRun.apprentices = 12;
+      activeRun.spells = STRONG_SPELLS.map(function (sp) { return { type: sp.type, tier: sp.tier, ings: sp.ings.slice() }; });
+      while (activeRun.spells.length < Meta.MAX_SPELLS) activeRun.spells.push(null);
       SimB.recalc(activeRun);
     }
   }
@@ -968,7 +1279,7 @@
     else window.__shotReady = true;
   }
 
-  var UI_TOKENS = ['title', 'home', 'tower', 'wizards', 'shop', 'spellbook', 'daily', 'dailybrew', 'prerun', 'results', 'ad-rewarded', 'ad-interstitial', 'admap'];
+  var UI_TOKENS = ['title', 'home', 'tower', 'frog', 'shop', 'spellbook', 'daily', 'dailybrew', 'prerun', 'results', 'ad-rewarded', 'ad-interstitial', 'admap'];
 
   function renderShot(token) {
     document.querySelectorAll('.overlay').forEach(function (o) { o.classList.remove('on'); });
@@ -988,9 +1299,9 @@
       case 'title': show('title'); buildTitle(); break;
       case 'home': show('home'); buildHome(); break;
       case 'tower': show('tower'); buildTower(); break;
-      case 'wizards': show('wizards'); buildWizards(); break;
+      case 'frog': show('frog'); buildFrog(); break;
       case 'shop': show('shop'); buildShop(); break;
-      case 'spellbook': show('spellbook'); buildSpellbook(); break;
+      case 'spellbook': save.meta.spells.missile.level = 3; show('spellbook'); buildSpellbook(); break;
       case 'daily': show('daily'); buildDaily(); break;
       case 'dailybrew': show('dailybrew'); buildDailyBrew(); break;
       case 'prerun': show('prerun'); buildPrerun(); break;
@@ -1018,10 +1329,10 @@
       if (run.state !== 'brew' && run.state !== 'won') throw new Error('expected brew or won after wave 1, got ' + run.state);
       if (run.state === 'brew') {
         if (!run.offers || run.offers.length !== 3) throw new Error('expected 3 offers');
-        Sim.pick(run, 0);
-        for (var a = 0; a < run.grid.length && !run._merged; a++) {
-          for (var b = a + 1; b < run.grid.length; b++) {
-            if (Sim.canMerge(run, a, b)) { Sim.merge(run, a, b); run._merged = true; break; }
+        SimB.takeOffer(run, 0);
+        for (var a = 0; a < run.pot.length && !run._merged; a++) {
+          for (var b = 0; b < run.pot.length; b++) {
+            if (a !== b && SimB.canMergePot(run, a, b)) { SimB.mergePot(run, a, b); run._merged = true; break; }
           }
         }
         SimB.nextWave(run);
@@ -1045,7 +1356,7 @@
     loadSave();
     ensureFallbackIcons();
     buildNav();
-    $('admap-toggle').addEventListener('click', toggleAdMap);
+    $('admap-toggle').addEventListener('pointerup', toggleAdMap);
 
     var hash = location.hash || '';
     if (hash === '#test-flow-b') { runTestFlowB(); return; }

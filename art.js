@@ -113,8 +113,20 @@
 
   // Profile hero for core B, facing right. s = height in pixels; (x, y) is the
   // ground point under the feet. Everything, hat included, fits between y - s and y.
-  function frogSide(ctx, x, y, s, skin, hat, gem, t, casting) {
+  // setColor/RARITY_COLOR are shared by the gear-tinted frogs and Art.gearIcon.
+  const RARITY_COLOR = { common: '#D8DCE8', rare: '#4FA8FF', epic: '#B266FF', legendary: '#FFC23D' };
+  function setColor(setId, fallback) {
+    try { if (root.Meta && root.Meta.SETS && root.Meta.SETS[setId]) return root.Meta.SETS[setId].color; } catch (e) { /* Meta not loaded yet */ }
+    return fallback;
+  }
+
+  // gear: optional { hat: setId|null, robe: setId|null }. When given, tints the hat
+  // and/or cape/robe with that set's colour (Meta.SETS[set].color); old callers that
+  // omit it keep drawing the plain hat/robe colours passed in.
+  function frogSide(ctx, x, y, s, skin, hat, gem, t, casting, gear) {
     ctx.save();
+    const hatColor = gear && gear.hat ? setColor(gear.hat, hat) : hat;
+    const robeColor = gear && gear.robe ? setColor(gear.robe, COLORS.robe) : COLORS.robe;
     const hop = Math.sin(t * 8) * s * 0.02;
     const yy = y - hop;
 
@@ -146,7 +158,7 @@
     ctx.quadraticCurveTo(x - s * 0.26, yy - s * 0.34, x - s * 0.30, yy - s * 0.12);
     ctx.quadraticCurveTo(x - s * 0.16, yy - s * 0.18, x - s * 0.10, yy - s * 0.34);
     ctx.closePath();
-    ctx.fillStyle = COLORS.robe;
+    ctx.fillStyle = robeColor;
     ctx.fill();
     outline(ctx, s);
     ctx.stroke();
@@ -190,7 +202,7 @@
     const bx = x + s * 0.02, by = yy - s * 0.60;
     ctx.beginPath();
     ctx.ellipse(bx, by, s * 0.17, s * 0.04, 0, 0, Math.PI * 2);
-    ctx.fillStyle = hat;
+    ctx.fillStyle = hatColor;
     ctx.fill();
     outline(ctx, s);
     ctx.stroke();
@@ -199,9 +211,9 @@
     ctx.quadraticCurveTo(bx - s * 0.24, yy - s * 0.80, x - s * 0.10, yy - s * 0.97);
     ctx.quadraticCurveTo(bx + s * 0.04, yy - s * 0.76, bx + s * 0.13, by - s * 0.01);
     ctx.closePath();
-    ctx.fillStyle = hat;
+    ctx.fillStyle = hatColor;
     ctx.fill();
-    ctx.fillStyle = darken(hat, 0.25);
+    ctx.fillStyle = darken(hatColor, 0.25);
     ctx.beginPath();
     ctx.moveTo(bx + s * 0.02, by - s * 0.12);
     ctx.quadraticCurveTo(bx, yy - s * 0.80, x - s * 0.10, yy - s * 0.97);
@@ -246,8 +258,10 @@
   }
 
   // Portrait / title frog, front facing.
-  function frogFront(ctx, x, y, s, skin, hat, robe, t, species) {
+  function frogFront(ctx, x, y, s, skin, hat, robe, t, species, gear) {
     ctx.save();
+    const hatColor = gear && gear.hat ? setColor(gear.hat, hat) : hat;
+    const robeColor = gear && gear.robe ? setColor(gear.robe, robe || COLORS.robe) : (robe || COLORS.robe);
     outline(ctx, s);
     const hop = Math.sin(t * 6) * s * 0.02;
     const cy = y - s * 0.5 - hop;
@@ -266,9 +280,9 @@
     ctx.lineTo(x + s * 0.26, cy + s * 0.06);
     ctx.quadraticCurveTo(x, cy + s * 0.16, x - s * 0.26, cy + s * 0.06);
     ctx.closePath();
-    ctx.fillStyle = robe || COLORS.robe;
+    ctx.fillStyle = robeColor;
     ctx.fill();
-    ctx.fillStyle = darken(robe || COLORS.robe, 0.22);
+    ctx.fillStyle = darken(robeColor, 0.22);
     ctx.beginPath();
     ctx.ellipse(x + s * 0.10, cy + s * 0.32, s * 0.16, s * 0.10, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -327,9 +341,9 @@
       ctx.lineTo(x + s * 0.02, eyDy - s * 0.58);
       ctx.lineTo(x + s * 0.20, eyDy - s * 0.06);
       ctx.closePath();
-      ctx.fillStyle = hat;
+      ctx.fillStyle = hatColor;
       ctx.fill();
-      ctx.fillStyle = darken(hat, 0.25);
+      ctx.fillStyle = darken(hatColor, 0.25);
       ctx.beginPath();
       ctx.moveTo(x + s * 0.02, eyDy - s * 0.30);
       ctx.lineTo(x + s * 0.02, eyDy - s * 0.58);
@@ -644,6 +658,25 @@
         c.quadraticCurveTo(x + s * 0.16, cy + s * 0.02, x, cy + s * 0.22);
         c.quadraticCurveTo(x - s * 0.16, cy + s * 0.02, x, cy - s * 0.22);
       }, '#C8CDE0', x, cy, s * 0.16, s * 0.22, lw(s));
+    } else if (type === 'dew') {
+      // a small green lily pad with a notch, and a pale blue water drop resting on it
+      ctx.fillStyle = '#3E8C4A';
+      ctx.beginPath();
+      ctx.arc(x, cy + s * 0.14, s * 0.22, 0.22, Math.PI * 2 - 0.22);
+      ctx.lineTo(x, cy + s * 0.14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#6FE3FF';
+      ctx.beginPath();
+      ctx.moveTo(x, cy - s * 0.20);
+      ctx.quadraticCurveTo(x + s * 0.10, cy - s * 0.04, x, cy + s * 0.08);
+      ctx.quadraticCurveTo(x - s * 0.10, cy - s * 0.04, x, cy - s * 0.20);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      circle(ctx, x - s * 0.03, cy - s * 0.10, s * 0.02, 'rgba(255,255,255,0.6)');
     } else if (type === 'spawn') {
       for (const [dx, dy] of [[-0.10, 0.08], [0.10, 0.06], [0, -0.08], [-0.04, -0.2]]) {
         ctx.fillStyle = 'rgba(230,245,255,0.85)';
@@ -901,8 +934,10 @@
     moon:   { name: 'Moon Dust',     element: 'arcane', stat: 'Power' },
     quick:  { name: 'Quicksilver',   element: 'arcane', stat: 'Cast speed' },
     spawn:  { name: 'Frogspawn',     element: 'nature', stat: 'Recruits' },
+    dew:    { name: 'Lily Dew',      element: 'dew',    stat: 'Heals per kill' },
   };
   const ELEMENT_COLOR = {
+    dew: '#6FE3FF',
     fire: COLORS.fire, ice: COLORS.ice, poison: COLORS.poison, blast: COLORS.blast,
     storm: COLORS.storm, arcane: COLORS.arcane, nature: COLORS.grass,
   };
@@ -973,6 +1008,93 @@
     ctx.fillStyle = COLORS.ink;
     ctx.font = `400 ${Math.round(h * 0.05)}px Kreon, Georgia, serif`;
     ctx.fillText(`${meta.stat} +, tier ${tier}`, x + w / 2, boxY + boxH * 0.5);
+    ctx.restore();
+  }
+
+  // ---- gear icon (Frog screen: slots, storage, sets) -------------------------
+
+  // A simple readable drawing per slot, filled in the set's colour (Meta.SETS[set].color)
+  // with a rim in the rarity colour. (x, y) is the ground point, s is the icon height.
+  function gearIcon(ctx, x, y, s, slot, rarityId, setId) {
+    ctx.save();
+    const fill = setColor(setId, COLORS.tier2);
+    const rim = RARITY_COLOR[rarityId] || RARITY_COLOR.common;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(x, y - s * 0.40, s * 0.56, 0, Math.PI * 2);
+    ctx.fillStyle = rim;
+    ctx.fill();
+    ctx.strokeStyle = COLORS.ink;
+    ctx.lineWidth = Math.max(1.5, s / 18);
+    ctx.stroke();
+    if (slot === 'hat') {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.28, y);
+      ctx.lineTo(x, y - s * 0.72);
+      ctx.lineTo(x + s * 0.28, y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = COLORS.ink;
+      ctx.lineWidth = Math.max(1.5, s / 20);
+      ctx.stroke();
+      ctx.fillStyle = darken(fill, 0.3);
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.20, y - s * 0.10);
+      ctx.lineTo(x + s * 0.20, y - s * 0.10);
+      ctx.lineTo(x + s * 0.26, y);
+      ctx.lineTo(x - s * 0.26, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else if (slot === 'robe') {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.22, y - s * 0.58);
+      ctx.quadraticCurveTo(x, y - s * 0.68, x + s * 0.22, y - s * 0.58);
+      ctx.lineTo(x + s * 0.32, y);
+      ctx.quadraticCurveTo(x, y - s * 0.10, x - s * 0.32, y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = COLORS.ink;
+      ctx.lineWidth = Math.max(1.5, s / 20);
+      ctx.stroke();
+    } else if (slot === 'staff') {
+      ctx.strokeStyle = '#7A5230';
+      ctx.lineWidth = s * 0.10;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - s * 0.62);
+      ctx.stroke();
+      ctx.strokeStyle = COLORS.ink;
+      ctx.lineWidth = Math.max(1.2, s / 24);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - s * 0.62);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y - s * 0.70, s * 0.16, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = COLORS.ink;
+      ctx.lineWidth = Math.max(1.5, s / 20);
+      ctx.stroke();
+    } else {
+      // amulet: a cord and a round pendant
+      ctx.beginPath();
+      ctx.arc(x, y - s * 0.36, s * 0.28, 0, Math.PI * 2);
+      ctx.strokeStyle = '#8A7A5A';
+      ctx.lineWidth = s * 0.06;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y - s * 0.12, s * 0.20, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = COLORS.ink;
+      ctx.lineWidth = Math.max(1.5, s / 20);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -1100,6 +1222,7 @@
     sceneryB,
     portrait,
     card,
+    gearIcon,
     ICON_SPRITE: buildIconSprite(),
   };
 })(typeof window !== 'undefined' ? window : this);
