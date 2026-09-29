@@ -1,0 +1,379 @@
+/* Magic Frogs prototype: shell styles. Art direction v2 (Milton, 2026-09-29):
+   Slay the Spire mood meets Gun Hero readability. Dark slate UI panels with gold
+   trim, parchment for the spell book and text boxes, Kreon for prose, Titan One
+   still for numbers/prices/the logo. No dark mode: every colour set explicitly. */
+
+:root {
+  --ink: #241B3A;
+  --sky: #7FD6FF; --sky-2: #D8F6FF;
+  --grass: #8FDB54; --grass-2: #63B83A;
+  --bog: #5FA88E;
+  --road: #6F6A93; --road-2: #858AB0; --dash: #FFF3C4;
+  --good: #2F86FF; --bad: #FF4D63; --gold: #FFC23D;
+  --fire: #FF7A2F; --ice: #6FE3FF; --poison: #8CFF3F; --blast: #C35CFF; --storm: #FFE14A; --arcane: #FF7BD5;
+  --panel: #FFF7E8; --panel-2: #FFE7B8;
+  --go: #54D63A; --go-shade: #2F9C1E;
+  --ad: #B44DFF; --ad-shade: #7F24C9;
+  --buy: #FFB020; --buy-shade: #D98300;
+  --coin: #FFC93C; --gem: #3FE0FF;
+  --frame: #1A1330;
+  --t1: #D8DCE8; --t2: #6EE06A; --t3: #4FA8FF; --t4: #B266FF; --t5: #FFC23D;
+
+  /* v2: Slay the Spire dark UI + dusk bog mood */
+  --slate: #262A3D; --slate-raised: #34395A; --trim: #C9A34A;
+  --parchment: #EAD9B0; --parchment-ink: #241B3A;
+  --dusk-top: #2E3A5C; --dusk-bot: #6A5A8C; --dusk-glow: #F2A65A;
+  --fog: rgba(184, 198, 217, 0.25);
+  --bog-ground: #4E7A4A; --bog-shade: #35573A; --bog-water: #3F6E6A;
+}
+
+* { box-sizing: border-box; }
+
+svg { width: 18px; height: 18px; display: inline-block; vertical-align: middle; flex: 0 0 auto; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--frame);
+  font-family: "Kreon", Georgia, serif;
+  font-weight: 400;
+  color: var(--parchment-ink);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+
+body { height: 100vh; }
+
+.titan { font-family: "Titan One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+.stroke {
+  color: #fff;
+  -webkit-text-stroke: 3px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 var(--ink);
+}
+
+#frame {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--frame);
+}
+
+#phone {
+  position: relative;
+  width: 390px; height: 844px;
+  background: var(--dusk-top);
+  border-radius: 44px;
+  border: 10px solid #000;
+  box-shadow: 0 0 0 3px #000;
+  overflow: hidden;
+}
+
+@media (max-width: 500px) {
+  #phone {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    max-width: 100vw;
+    border-radius: 0; border: 0; box-shadow: none;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #frame { padding: 0; }
+}
+
+#app { position: absolute; inset: 0; width: 100%; max-width: 100%; }
+
+.screen {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--dusk-top), var(--dusk-bot) 75%),
+              linear-gradient(0deg, var(--dusk-glow) 0%, transparent 18%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.screen::before {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 30%; height: 40px;
+  background: var(--fog);
+  pointer-events: none;
+}
+.screen.on { display: flex; }
+
+.overlay {
+  position: absolute; inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center; justify-content: center;
+  background: rgba(20, 15, 35, 0.55);
+}
+.overlay.on { display: flex; }
+
+.scrim {
+  position: absolute; inset: 0;
+  background: rgba(20, 15, 35, 0.3);
+  z-index: 1;
+}
+
+/* ---- Buttons ---- */
+
+button, .btn {
+  font-family: "Titan One", sans-serif;
+  font-size: 16px;
+  color: #fff;
+  background: var(--go);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 12px 18px;
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform 0.05s;
+}
+button:active, .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+button:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.btn-go { background: var(--go); border-color: var(--ink); }
+.btn-ad { background: var(--ad); }
+.btn-buy { background: var(--buy); }
+.btn-ghost { background: var(--slate-raised); color: #EDE6F5; border-color: var(--trim); box-shadow: 0 5px 0 rgba(0,0,0,0.5); }
+.btn-ghost:active { box-shadow: 0 2px 0 rgba(0,0,0,0.5); }
+.btn-text {
+  background: none; border: none; box-shadow: none; color: var(--ink);
+  text-decoration: underline; font-family: "Kreon", Georgia, serif; font-weight: 700; font-size: 14px;
+}
+.btn-lock { background: #9A93B0; }
+.btn-small { padding: 8px 12px; font-size: 13px; min-height: 36px; }
+.btn-block { width: 100%; }
+
+.icon-ad { width: 20px; height: 20px; }
+
+/* ---- Panels / cards ---- */
+
+.panel {
+  position: relative;
+  background: var(--slate);
+  color: #EDE6F5;
+  border: 3px solid var(--trim);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5);
+  padding: 14px;
+}
+.panel::before, .panel::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  background: var(--trim);
+  transform: rotate(45deg);
+}
+.panel::before { top: -4px; left: -4px; }
+.panel::after { bottom: -4px; right: -4px; }
+
+.panel-raised { background: var(--slate-raised); }
+
+.parchment {
+  background: var(--parchment);
+  color: var(--parchment-ink);
+  border: 2px solid var(--trim);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.card { margin: 10px 16px; }
+
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.center { align-items: center; justify-content: center; }
+
+.pill {
+  background: var(--slate-raised);
+  color: #EDE6F5;
+  border: 3px solid var(--trim);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+  padding: 4px 10px 4px 6px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: "Titan One", sans-serif; font-size: 14px;
+}
+.pill .add {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--go); border: 2px solid var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; line-height: 1;
+}
+
+/* ---- Top bars, nav ---- */
+
+.topbar {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 12px;
+  flex: 0 0 auto;
+}
+
+.avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 3px solid var(--trim); background: var(--parchment);
+  overflow: hidden;
+}
+.avatar canvas { width: 100%; height: 100%; }
+
+#navbar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: none;
+  background: var(--slate);
+  border-top: 3px solid var(--trim);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  justify-content: space-around;
+  align-items: flex-end;
+}
+#navbar.on { display: flex; }
+.navbtn {
+  background: none; border: none; box-shadow: none; color: #B9B3D6;
+  flex-direction: column; gap: 2px; font-family: "Kreon", Georgia, serif; font-weight: 700; font-size: 11px;
+  padding: 4px 6px; min-height: 44px;
+}
+.navbtn svg { width: 22px; height: 22px; }
+.navbtn.active { color: var(--go-shade); }
+.navbtn.raised {
+  background: var(--go); color: #fff; border: 3px solid var(--ink); border-radius: 16px;
+  box-shadow: 0 4px 0 var(--ink); transform: translateY(-10px); padding: 8px 10px;
+}
+.navbtn.raised.active { background: var(--go-shade); }
+
+.dot {
+  position: absolute; top: 2px; right: 2px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bad); border: 2px solid var(--ink);
+}
+
+/* ---- Toast ---- */
+
+#toast-host {
+  position: fixed; left: 0; right: 0; bottom: 90px;
+  z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--ink); color: #fff;
+  border-radius: 12px; padding: 10px 16px;
+  font-family: "Kreon", Georgia, serif; font-weight: 700; font-size: 14px;
+  box-shadow: 0 3px 0 #000;
+  max-width: 320px; text-align: center;
+}
+
+/* ---- Title screen ---- */
+
+#title { justify-content: space-between; }
+.title-logo {
+  margin: 60px auto 0; transform: rotate(-3deg);
+  text-align: center; line-height: 0.95;
+}
+.title-logo .l1 { display: block; font-size: 50px; color: var(--parchment); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.title-logo .l2 { display: block; font-size: 50px; color: var(--gold); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.title-core-btns { display: flex; flex-direction: column; gap: 14px; padding: 20px 24px 40px; }
+.core-btn { flex-direction: column; padding: 16px; font-size: 22px; gap: 2px; }
+.core-btn .sub { font-family: "Kreon", Georgia, serif; font-weight: 400; font-size: 12px; }
+.title-stage { flex: 1 1 auto; position: relative; }
+.title-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---- Home ---- */
+
+#home .topbar { flex-wrap: wrap; }
+.rankbar {
+  height: 8px; border-radius: 6px; background: #fff; border: 2px solid var(--ink); overflow: hidden; width: 90px;
+}
+.rankbar > i { display: block; height: 100%; background: var(--gold); }
+.currencies { display: flex; gap: 6px; flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+
+.chapter-card { position: relative; }
+.chapter-card .stage { height: 160px; border-radius: 14px; overflow: hidden; border: 3px solid var(--trim); position: relative; background: var(--dusk-top); }
+.chapter-card .stage canvas { width: 100%; height: 100%; }
+.chapter-card .chests { display: flex; gap: 8px; margin-top: 8px; }
+.chest-icon { width: 30px; height: 30px; }
+
+.home-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin: 0 16px 100px; }
+.home-cols .col { min-width: 0; }
+.mini-card { padding: 10px; text-align: center; position: relative; min-width: 0; }
+.mini-card svg { width: 28px; height: 28px; }
+
+.play-big { font-size: 26px; padding: 16px; margin: 4px 16px 12px; }
+
+/* ---- Tower / Wizards / Shop / Spellbook lists ---- */
+
+.building-card, .wizard-card, .shop-card { margin-bottom: 10px; }
+.building-card .head, .wizard-card .head { display: flex; align-items: center; gap: 10px; }
+.building-card .icon-box, .wizard-card .icon-box { width: 48px; height: 48px; border-radius: 12px; background: var(--slate-raised); border: 2px solid var(--trim); display: flex; align-items: center; justify-content: center; }
+.building-card .icon-box svg { width: 26px; height: 26px; }
+.rank-name { font-family: "Titan One", sans-serif; }
+
+.spellbook-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 10px 16px 100px; }
+.spell-page { padding: 10px; text-align: center; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.spell-page.blank { background: #C9B98C; color: #8A7A55; border-color: #8A7A55; }
+.spell-page .name { font-size: 11px; font-family: "Kreon", Georgia, serif; font-weight: 700; }
+.elem-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin: 0 1px; border: 1.5px solid var(--ink); }
+
+/* ---- Daily ---- */
+
+.daily-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 16px; }
+.daily-day { padding: 8px; text-align: center; font-size: 11px; }
+.daily-day.claimed { background: var(--go); color: #fff; }
+.daily-day.today { border-color: var(--gold); box-shadow: 0 5px 0 var(--gold); }
+
+/* ---- Prerun ---- */
+
+#prerun { align-items: center; justify-content: center; gap: 14px; padding: 20px; }
+#prerun .panel { width: 100%; max-width: 340px; }
+
+/* ---- Results ---- */
+
+#results { align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; }
+#results .panel { width: 100%; max-width: 340px; }
+.stat-line { display: flex; justify-content: space-between; font-family: "Kreon", Georgia, serif; font-weight: 700; }
+
+/* ---- Revive overlay ---- */
+
+#revive .panel, #ad .panel, #admap .panel { width: 320px; max-width: 88vw; }
+#revive .cauldron-row { display: flex; gap: 4px; overflow-x: auto; padding: 6px 0; }
+#revive .cauldron-row .cell { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--trim); background: var(--slate-raised); flex: 0 0 auto; }
+
+/* ---- Ad mock ---- */
+
+.ad-mock { text-align: center; }
+.ad-video { background: #333; color: #ccc; border-radius: 10px; height: 160px; display: flex; align-items: center; justify-content: center; margin: 10px 0; font-family: "Kreon", Georgia, serif; }
+.ad-close { position: absolute; top: -18px; right: -18px; width: 44px; height: 44px; border-radius: 50%; padding: 0; background: var(--ink); }
+
+/* ---- Designer panel ---- */
+
+#admap-toggle {
+  position: fixed; top: 8px; right: 8px; z-index: 300;
+  font-size: 11px; padding: 6px 10px; min-height: 32px; background: var(--slate-raised); color: #EDE6F5; border-color: var(--trim); box-shadow: 0 3px 0 rgba(0,0,0,0.5);
+}
+@media (max-width: 500px) {
+  #admap-toggle { top: env(safe-area-inset-top, 6px); right: 6px; }
+}
+#admap .panel { max-height: 80vh; overflow-y: auto; }
+#admap table { width: 100%; border-collapse: collapse; font-size: 11px; }
+#admap td, #admap th { border-bottom: 1px solid var(--ink); padding: 4px; text-align: left; }
+.ad-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--ad); color: #fff; border: 2px solid var(--ink); border-radius: 8px;
+  font-size: 10px; padding: 1px 5px; margin-left: 4px; font-family: "Titan One", sans-serif;
+}
+
+/* ---- Locked ---- */
+
+.locked-block { text-align: center; padding: 40px 24px; opacity: 0.85; }
+.locked-block svg { width: 48px; height: 48px; margin-bottom: 10px; }

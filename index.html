@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A1330">
+<title>Magic Frogs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kreon:wght@400;700&family=Titan+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="frame">
+  <div id="phone">
+    <div id="app">
+      <div id="title" class="screen"></div>
+      <div id="home" class="screen"></div>
+      <div id="tower" class="screen"></div>
+      <div id="wizards" class="screen"></div>
+      <div id="shop" class="screen"></div>
+      <div id="pass" class="screen"></div>
+      <div id="spellbook" class="screen"></div>
+      <div id="daily" class="screen"></div>
+      <div id="dailybrew" class="screen"></div>
+      <div id="prerun" class="screen"></div>
+      <div id="run" class="screen"></div>
+      <div id="results" class="screen"></div>
+      <nav id="navbar"></nav>
+      <div id="revive" class="overlay"></div>
+      <div id="ad" class="overlay"></div>
+      <div id="admap" class="overlay"></div>
+    </div>
+  </div>
+  <button id="admap-toggle" type="button">Ad map</button>
+</div>
+
+<div id="toast-host"></div>
+<div id="test-flow-b" style="display:none"></div>
+
+<svg id="icon-sprite-slot" hidden></svg>
+
+<script src="sim.js"></script>
+<script src="sim-b.js"></script>
+<script src="art.js"></script>
+<script src="run-b.js"></script>
+<script>
+  (function () {
+    try {
+      if (window.Art && Art.ICON_SPRITE) {
+        var slot = document.getElementById('icon-sprite-slot');
+        slot.outerHTML = Art.ICON_SPRITE;
+      }
+    } catch (e) { /* icon sprite is cosmetic; a missing Art must not stop the page */ }
+  })();
+</script>
+<script src="ui.js"></script>
+
+</body>
+</html>
