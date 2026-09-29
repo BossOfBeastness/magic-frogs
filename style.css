@@ -362,7 +362,12 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outli
   font-size: 11px; padding: 6px 10px; min-height: 32px; background: var(--slate-raised); color: #EDE6F5; border-color: var(--trim); box-shadow: 0 3px 0 rgba(0,0,0,0.5);
 }
 @media (max-width: 500px) {
-  #admap-toggle { top: env(safe-area-inset-top, 6px); right: 6px; }
+  #admap-toggle {
+    top: auto; right: auto;
+    left: 6px; bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    font-size: 9px; padding: 4px 8px; min-height: 26px;
+    opacity: 0.5;
+  }
 }
 #admap .panel { max-height: 80vh; overflow-y: auto; }
 #admap table { width: 100%; border-collapse: collapse; font-size: 11px; }

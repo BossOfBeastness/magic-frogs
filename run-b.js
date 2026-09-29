@@ -242,7 +242,7 @@
       const glow = selected != null && selected !== i && Sim.canMerge(run, selected, i);
       if (glow) { g.save(); g.fillStyle = COL.go; g.globalAlpha = 0.3; g.fillRect(0, 0, c.width, c.height); g.restore(); }
       if (i === selected) { g.save(); g.strokeStyle = COL.gold; g.lineWidth = 4; g.strokeRect(2, 2, c.width - 4, c.height - 4); g.restore(); }
-      if (p) call('ingredient', [g, c.width / 2, c.height * 0.85, c.height * 0.7, p.type, p.tier]);
+      if (p) call('ingredient', [g, c.width / 2, c.height * 0.5, c.height * 0.7, p.type, p.tier]);
     });
     els.lock.style.display = run.state === 'brew' ? 'none' : 'flex';
   }
@@ -259,7 +259,7 @@
       g.clearRect(0, 0, c.width, c.height);
       const cw = c.width * 0.9, ch = c.height * 0.9;
       call('card', [g, (c.width - cw) / 2, (c.height - ch) / 2, cw, ch, o.type, o.tier]);
-      c.onclick = () => { Sim.pick(run, i); selected = null; maybeSpell(); refreshAll(); };
+      c.onpointerup = () => { Sim.pick(run, i); selected = null; maybeSpell(); refreshAll(); };
     });
     els.rerollBtn.textContent = run.rerolls < 1 ? 'Reroll' : 'Reroll: watch an ad';
   }
