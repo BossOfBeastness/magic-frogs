@@ -822,6 +822,7 @@
 
   function buildResults(run) {
     var s = $('results');
+    save.bestWave = Math.max(save.bestWave, run.wave || 0);
     var cleared = run.wave >= 15 && run.state === 'won';
     s.innerHTML = '<div class="panel">' +
       '<div style="font-family:\'Titan One\',sans-serif;font-size:18px">' + (cleared ? 'Chapter cleared!' : 'Run over: wave ' + run.wave) + '</div>' +
@@ -973,10 +974,10 @@
     document.querySelectorAll('.overlay').forEach(function (o) { o.classList.remove('on'); });
     if (token.indexOf('b-') === 0) {
       show('run');
-      try { RunB.mount($('run')); RunB.shot(token); } catch (e) { /* RunB drives this token */ }
-      if (token === 'b-revive') {
-        var run = SimB.createRun({ seed: 1, meta: metaFromSave() });
-        showRevive(run);
+      var shotRun;
+      try { RunB.mount($('run')); shotRun = RunB.shot(token); } catch (e) { /* RunB drives this token */ }
+      if (token === 'b-revive' && shotRun) {
+        showRevive(shotRun);
       }
       shotReady();
       return;

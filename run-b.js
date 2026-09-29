@@ -176,7 +176,7 @@
       const r = canvas.getBoundingClientRect();
       const px = (clientX - r.left) / r.width, py = (clientY - r.top) / r.height;
       const x = clamp(((px - 0.04) / 0.96) * 12, 0, 12);
-      const t = clamp((0.55 - py) / 0.25, 0, 1);
+      const t = clamp((1 - py) / (0.25 / 0.55), 0, 1);
       const y = t * 4;
       return { x, y };
     };
@@ -337,22 +337,22 @@
 
     for (const e of entities) {
       if (e.kind === 'rat') {
-        const p = worldToScreen(e.r.x, e.r.y, W, H);
+        const p = worldToScreen(e.r.x, e.r.y, W, Hs);
         const s = H * 0.11 * p.scale;
         const status = { burnT: e.r.burnT, slowT: e.r.slowT, poisT: e.r.poisT, spitter: !!e.r.isSpitter };
         call('ratSide', [ctx, p.sx, p.sy, s, e.r.kind, t, status]);
         drawHpNumber(e.r, p.sx, p.sy - s * 1.1);
       } else if (e.kind === 'boss') {
-        const p = worldToScreen(e.r.x, e.r.y, W, H);
+        const p = worldToScreen(e.r.x, e.r.y, W, Hs);
         const s = H * 0.22 * p.scale;
         call('boss', [ctx, p.sx, p.sy, s, e.r.name, t, true]);
       } else if (e.kind === 'glob') {
-        const p = worldToScreen(e.r.x, e.r.y, W, H);
+        const p = worldToScreen(e.r.x, e.r.y, W, Hs);
         call('glob', [ctx, p.sx, p.sy, H * 0.03, t]);
       }
     }
 
-    const fp = worldToScreen(run.frog.x, run.frog.y, W, H);
+    const fp = worldToScreen(run.frog.x, run.frog.y, W, Hs);
     const fs = H * 0.16;
     const skin = (typeof Art !== 'undefined' && Art.COLORS) ? Art.COLORS.skinLeaf : '#6DD35A';
     const skin2 = (typeof Art !== 'undefined' && Art.COLORS) ? Art.COLORS.skinLime : '#A8E04A';
@@ -399,14 +399,14 @@
 
     for (let i = pops.length - 1; i >= 0; i--) {
       const p = pops[i]; p.t += 1 / 60;
-      const wp = worldToScreen(p.x, p.y, W, H);
+      const wp = worldToScreen(p.x, p.y, W, Hs);
       ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.t / 0.3); ctx.fillStyle = '#C9C0E8';
       ctx.beginPath(); ctx.arc(wp.sx, wp.sy - 10, 8 + p.t * 20, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       if (p.t > 0.3) pops.splice(i, 1);
     }
     for (let i = floaters.length - 1; i >= 0; i--) {
       const f = floaters[i]; f.t += 1 / 60;
-      const wp = worldToScreen(f.x, f.y, W, H);
+      const wp = worldToScreen(f.x, f.y, W, Hs);
       ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1); ctx.fillStyle = f.col;
       ctx.font = '600 16px ' + FONT_NUM; ctx.textAlign = 'center';
       ctx.fillText(f.text, wp.sx, wp.sy - 30 - f.t * 20); ctx.restore();
@@ -415,9 +415,9 @@
     if (run.chainFx) {
       ctx.save(); ctx.strokeStyle = COL.coin; ctx.lineWidth = 3;
       ctx.beginPath();
-      const a = worldToScreen(run.chainFx.from.x, run.chainFx.from.y, W, H);
+      const a = worldToScreen(run.chainFx.from.x, run.chainFx.from.y, W, Hs);
       ctx.moveTo(a.sx, a.sy);
-      for (const to of run.chainFx.to) { const bpt = worldToScreen(to.x, to.y, W, H); ctx.lineTo(bpt.sx, bpt.sy); }
+      for (const to of run.chainFx.to) { const bpt = worldToScreen(to.x, to.y, W, Hs); ctx.lineTo(bpt.sx, bpt.sy); }
       ctx.stroke(); ctx.restore();
       run.chainFx = null;
     }
@@ -549,7 +549,11 @@
     } else if (token === 'b-brew') {
       r = SimB.createRun({ seed: 1 });
       let guard = 0;
-      while (r.state !== 'brew' && guard < 3000) { fastForward(r, 60, 'smart'); guard++; }
+      while ((r.state === 'run' || r.state === 'boss') && guard < 7200) {
+        SimB.step(r, 1 / 60, SimB.autopilot(r));
+        r.events.length = 0;
+        guard++;
+      }
     } else if (token === 'b-revive') {
       r = SimB.createRun({ seed: 1 });
       let guard = 0;
