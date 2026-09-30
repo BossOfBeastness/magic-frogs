@@ -12,18 +12,25 @@
 <body>
 <div id="frame">
   <div id="phone">
-    <canvas id="stage" width="390" height="844"></canvas>
+    <canvas id="stage-fight" width="390" height="354"></canvas>
+    <div id="page-panel">
+      <canvas id="stage-page" width="390" height="298"></canvas>
+    </div>
+    <div id="shop-tray">
+      <canvas id="stage-shop" width="390" height="164"></canvas>
+      <button id="btn-reroll" type="button" class="ui-btn ui-btn-ghost">Reroll</button>
+      <button id="btn-play" type="button" class="ui-btn ui-btn-go" disabled>PLAY</button>
+    </div>
     <button id="btn-help" type="button" class="hud-btn">?</button>
     <button id="btn-rotate" type="button" class="hud-btn hidden">R</button>
-    <button id="btn-reroll" type="button" class="ui-btn ui-btn-ghost">Reroll</button>
-    <button id="btn-play" type="button" class="ui-btn ui-btn-go" disabled>PLAY</button>
     <button id="btn-retry" type="button" class="ui-btn ui-btn-go hidden">Retry</button>
     <div id="toast" class="toast"></div>
     <div id="howto" class="overlay hidden">
       <div class="panel">
         <p>Drag or tap a piece to pick it up, tap again to rotate it.</p>
         <p>Drop it on the page: green fits, red does not. Drop on a twin to merge it.</p>
-        <p>Gold stars light up next to the ingredient they want and boost the spell.</p>
+        <p>Drop a spell on a different spell to fuse them into one stronger piece. Drop an ingredient on a spell to feed it in, up to two.</p>
+        <p>Spells cast down the page in order: top row first, left to right. Line up ice before blast, poison before fire, and more, for a combo.</p>
         <button id="btn-howto-close" type="button" class="ui-btn ui-btn-go">Got it</button>
       </div>
     </div>

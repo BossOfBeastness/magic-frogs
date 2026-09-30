@@ -38,12 +38,47 @@ body { height: 100vh; }
   border-radius: 0; border: 0; box-shadow: none;
 }
 
-#stage {
+#stage-fight {
+  position: absolute; left: 0; top: 0;
+  width: 390px; height: 354px;
+  display: block;
+}
+
+/* The grimoire page (header/tray/grid). Sits just below the fight by default;
+   slides up to cover most of the fight between waves. transform-only so the
+   transition is cheap and never causes a layout jump. */
+#page-panel {
+  position: absolute; left: 0; top: 64px;
+  width: 390px; height: 298px;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(290px);
+}
+#page-panel.up { transform: translateY(0); }
+#stage-page {
   position: absolute; inset: 0;
-  width: 390px; height: 844px;
+  width: 390px; height: 298px;
   touch-action: none;
   display: block;
 }
+
+/* The shop tray (offers, reroll, play). Parked off the bottom edge of the
+   phone by default (fully hidden, not just dimmed); slides up into view,
+   right under the raised page, between waves. */
+#shop-tray {
+  position: absolute; left: 0; top: 362px;
+  width: 390px; height: 164px;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(482px);
+}
+#shop-tray.up { transform: translateY(0); }
+#stage-shop {
+  position: absolute; left: 0; top: 0;
+  width: 390px; height: 164px;
+  touch-action: none;
+  display: block;
+}
+#shop-tray #btn-reroll { left: 20px; top: 108px; width: 110px; }
+#shop-tray #btn-play { right: 20px; top: 108px; width: 130px; font-size: 18px; }
 
 .hidden { display: none !important; }
 
@@ -61,7 +96,7 @@ body { height: 100vh; }
   box-shadow: 0 3px 0 rgba(0,0,0,0.5);
 }
 #btn-help { top: 10px; right: 10px; }
-#btn-rotate { left: 174px; top: 630px; background: #FFB020; color: #241B3A; }
+#btn-rotate { left: 174px; top: 316px; background: #FFB020; color: #241B3A; }
 
 .ui-btn {
   position: absolute;
@@ -83,13 +118,11 @@ body { height: 100vh; }
 .ui-btn-go { background: #54D63A; }
 .ui-btn-ghost { background: #34395A; border-color: #C9A34A; color: #EDE6F5; }
 
-#btn-reroll { left: 20px; top: 782px; width: 110px; }
-#btn-play { right: 20px; top: 782px; width: 130px; font-size: 18px; }
-#btn-retry { left: 130px; top: 700px; width: 130px; font-size: 18px; }
+#btn-retry { left: 130px; top: 300px; width: 130px; font-size: 18px; }
 
 .toast {
   position: absolute;
-  left: 50%; top: 700px;
+  left: 50%; top: 40px;
   transform: translate(-50%, 0);
   background: rgba(20, 15, 35, 0.92);
   color: #FFB870;
