@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Potion Shelf - Magic Frogs prototype B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kreon:wght@400;700&family=Titan+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="phone">
+    <div id="fight-wrap">
+      <canvas id="fight-canvas" width="390" height="355"></canvas>
+      <div id="hud-top">
+        <div id="hud-wave" class="hud-wave">WAVE 1 / 5</div>
+        <div id="hud-gold"><svg class="icon" viewBox="0 0 24 24"><use href="#i-coin"></use></svg><span id="gold-num">20</span></div>
+      </div>
+      <div id="hud-hp-bar"><div id="hud-hp-fill"></div></div>
+      <button id="btn-help" title="How to play">?</button>
+      <div id="stats-bar">
+        <span id="stat-dmg">DMG 10</span>
+        <span id="stat-rate">RATE 1.2/s</span>
+        <span id="stat-effects"></span>
+      </div>
+    </div>
+
+    <div id="puzzle-wrap">
+      <div id="hint-line" class="hint-line" hidden></div>
+
+      <div id="shelf-row"></div>
+
+      <div id="belt-row">
+        <div class="belt-label">POTION BELT</div>
+        <div id="belt-slots"></div>
+      </div>
+
+      <div id="shop-row">
+        <div id="offers"></div>
+        <div id="shop-tools">
+          <button id="btn-reroll" class="btn-tool">Reroll <span id="reroll-cost">free</span></button>
+          <button id="btn-buy-flask" class="btn-tool">+Flask <span id="flask-cost">15</span></button>
+          <button id="btn-swirl" class="btn-tool">Swirl <span id="swirl-cost">5</span></button>
+        </div>
+      </div>
+
+      <button id="btn-play">PLAY</button>
+
+      <div id="lock-overlay" hidden>
+        <svg class="icon icon-lock" viewBox="0 0 24 24"><use href="#i-lock"></use></svg>
+        <div>Fighting...</div>
+      </div>
+    </div>
+
+    <canvas id="fx-canvas" width="390" height="844"></canvas>
+
+    <div id="refuse-line" class="refuse-line" hidden></div>
+
+    <div id="help-overlay" hidden>
+      <div id="help-box">
+        <p>Tap a flask to lift it, tap another to pour. Same colour stacks pour together.</p>
+        <p>Fill a flask with one colour to cork a potion. Potions on the belt power the frog's spell.</p>
+        <p>Buy ingredient bottles between waves, then tap the bottle and a flask to pour it in.</p>
+        <button id="btn-help-close">Got it</button>
+      </div>
+    </div>
+
+    <div id="end-overlay" hidden>
+      <div id="end-box">
+        <div id="end-title">Victory</div>
+        <button id="btn-retry">Retry</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../_shared/art.js"></script>
+<script src="../_shared/meta.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

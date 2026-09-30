@@ -1,0 +1,340 @@
+/* Potion Shelf, Magic Frogs prototype B. Dark slate panels, gold trim, parchment text boxes,
+   same frame as the other battle screen prototypes. */
+
+:root {
+  --slate: #262A3D;
+  --slate-raised: #34395A;
+  --gold: #C9A34A;
+  --parchment: #EAD9B0;
+  --ink: #241B3A;
+  --go: #54D63A;
+  --go-shade: #2F9C1E;
+  --ad: #B44DFF;
+  --buy: #FFB020;
+  --buy-shade: #D98300;
+  --bad: #FF4D63;
+  --good-glow: #4CFF6E;
+  --bad-glow: #FF5A5A;
+}
+
+* { box-sizing: border-box; }
+
+/* The hidden attribute must win over any display set below (#lock-overlay, #help-overlay,
+   #end-overlay all set display:flex for when they are shown). */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #111320;
+  color: var(--parchment);
+  font-family: Kreon, Georgia, serif;
+  height: 100%;
+  overflow: hidden;
+}
+
+#stage {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#phone {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: var(--slate);
+  overflow: hidden;
+  border: 0;
+  box-shadow: 0 0 0 4px var(--gold);
+}
+
+@media (min-width: 501px) {
+  #phone { border-radius: 28px; box-shadow: 0 0 0 6px #17131f, 0 0 0 10px var(--gold), 0 20px 60px rgba(0,0,0,0.6); }
+}
+
+/* ---- fight (top 42%) ---- */
+
+#fight-wrap {
+  position: relative;
+  width: 390px;
+  height: 355px;
+  background: #2E3A5C;
+  overflow: hidden;
+  touch-action: none;
+}
+
+#fight-canvas { display: block; width: 390px; height: 355px; touch-action: none; }
+
+#hud-top {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.hud-wave {
+  font-family: "Titan One", cursive;
+  font-size: 16px;
+  color: var(--parchment);
+  background: rgba(36,27,58,0.65);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+}
+
+#hud-gold {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Titan One", cursive;
+  font-size: 16px;
+  color: #FFC93C;
+  background: rgba(36,27,58,0.65);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+}
+#hud-gold .icon { width: 18px; height: 18px; }
+
+#hud-hp-bar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 30px;
+  height: 10px;
+  background: rgba(0,0,0,0.5);
+  border: 1.5px solid var(--ink);
+  border-radius: 5px;
+  overflow: hidden;
+}
+#hud-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(#7BFF6E, #2F9C1E);
+  transition: width 0.2s linear;
+}
+
+#btn-help {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: var(--slate-raised);
+  color: var(--parchment);
+  font-family: "Titan One", cursive;
+  font-size: 14px;
+  z-index: 5;
+}
+/* moved to top-right of hud, but keep help button reachable above hud gold */
+#hud-top ~ #btn-help { top: 8px; }
+
+#stats-bar {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--parchment);
+  background: rgba(36,27,58,0.65);
+  border-radius: 6px;
+  padding: 2px 6px;
+  flex-wrap: wrap;
+}
+#stats-bar span.tick-up { color: var(--good-glow); }
+
+/* ---- puzzle (bottom 58%) ---- */
+
+#puzzle-wrap {
+  position: relative;
+  width: 390px;
+  height: 489px;
+  padding: 8px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hint-line {
+  font-size: 12px;
+  color: #FFE9A8;
+  text-align: center;
+  animation: pulse-text 1s ease-in-out infinite;
+}
+@keyframes pulse-text { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+#shelf-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  height: 190px;
+  background: var(--slate-raised);
+  border-radius: 10px;
+  border: 2px solid var(--gold);
+  padding: 6px;
+}
+
+#belt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--slate-raised);
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+  padding: 4px 8px;
+  height: 56px;
+}
+.belt-label {
+  font-family: "Titan One", cursive;
+  font-size: 10px;
+  color: var(--gold);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+#belt-slots { display: flex; gap: 6px; flex: 1; justify-content: center; }
+
+#shop-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+#offers {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+#shop-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 76px;
+}
+
+.btn-tool {
+  font-family: Kreon, Georgia, serif;
+  font-size: 10px;
+  color: var(--ink);
+  background: var(--parchment);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 4px 2px;
+  flex: 1;
+}
+.btn-tool:disabled { opacity: 0.45; }
+.btn-tool.pulse { animation: pulse-btn 0.9s ease-in-out infinite; }
+@keyframes pulse-btn { 0%,100% { box-shadow: 0 0 0 0 rgba(255,176,32,0.7); } 50% { box-shadow: 0 0 0 6px rgba(255,176,32,0); } }
+
+#btn-play {
+  font-family: "Titan One", cursive;
+  font-size: 20px;
+  color: #163008;
+  background: var(--go);
+  border: 3px solid var(--go-shade);
+  border-radius: 12px;
+  padding: 10px;
+  letter-spacing: 1px;
+}
+#btn-play:disabled { opacity: 0.4; }
+#btn-play.pulse { animation: pulse-btn 0.9s ease-in-out infinite; }
+
+#lock-overlay {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  bottom: 8px;
+  background: rgba(20,16,32,0.55);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--parchment);
+  z-index: 4;
+}
+.icon-lock { width: 28px; height: 28px; }
+
+#fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 390px;
+  height: 844px;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.refuse-line {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 96px;
+  text-align: center;
+  color: #FFD8D8;
+  background: rgba(180,20,30,0.85);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  z-index: 6;
+  pointer-events: none;
+}
+
+#help-overlay, #end-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,8,16,0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+#help-box, #end-box {
+  width: 300px;
+  background: var(--parchment);
+  color: var(--ink);
+  border: 3px solid var(--gold);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+#help-box p { font-size: 13px; text-align: left; margin: 0 0 10px; }
+#help-box button, #end-box button {
+  font-family: "Titan One", cursive;
+  font-size: 15px;
+  color: #163008;
+  background: var(--go);
+  border: 2px solid var(--go-shade);
+  border-radius: 8px;
+  padding: 8px 18px;
+}
+#end-title {
+  font-family: "Titan One", cursive;
+  font-size: 26px;
+  margin-bottom: 14px;
+}
+
+.icon { width: 22px; height: 22px; fill: currentColor; }
+
+canvas.flask-canvas, canvas.bottle-canvas, canvas.belt-canvas {
+  touch-action: none;
+  cursor: pointer;
+}

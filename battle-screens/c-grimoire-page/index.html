@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grimoire Page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kreon:wght@400;700&family=Titan+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="frame">
+  <div id="phone">
+    <canvas id="stage" width="390" height="844"></canvas>
+    <button id="btn-help" type="button" class="hud-btn">?</button>
+    <button id="btn-rotate" type="button" class="hud-btn hidden">R</button>
+    <button id="btn-reroll" type="button" class="ui-btn ui-btn-ghost">Reroll</button>
+    <button id="btn-play" type="button" class="ui-btn ui-btn-go" disabled>PLAY</button>
+    <button id="btn-retry" type="button" class="ui-btn ui-btn-go hidden">Retry</button>
+    <div id="toast" class="toast"></div>
+    <div id="howto" class="overlay hidden">
+      <div class="panel">
+        <p>Drag or tap a piece to pick it up, tap again to rotate it.</p>
+        <p>Drop it on the page: green fits, red does not. Drop on a twin to merge it.</p>
+        <p>Gold stars light up next to the ingredient they want and boost the spell.</p>
+        <button id="btn-howto-close" type="button" class="ui-btn ui-btn-go">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../_shared/art.js"></script>
+<script src="../_shared/meta.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

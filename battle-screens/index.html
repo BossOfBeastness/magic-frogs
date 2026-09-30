@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magic Frogs battle screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Kreon:wght@400;700&family=Titan+One&display=swap" rel="stylesheet">
+<style>
+  :root { --slate: #262A3D; --raised: #34395A; --trim: #C9A34A; --parch: #EAD9B0; --ink: #241B3A; --go: #54D63A; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(#2E3A5C, #6A5A8C); color: var(--parch); font-family: "Kreon", Georgia, serif; padding: 24px 16px; }
+  h1 { font-family: "Titan One", "Arial Rounded MT Bold", sans-serif; color: #FFC23D; font-size: 30px; margin: 0 0 4px; text-align: center; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
+  p.lead { text-align: center; margin: 0 0 20px; font-size: 15px; }
+  a.card { display: block; max-width: 460px; margin: 0 auto 14px; padding: 16px; background: var(--slate); border: 3px solid var(--trim); border-radius: 16px; box-shadow: 0 5px 0 var(--ink); color: var(--parch); text-decoration: none; }
+  a.card:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+  .name { font-family: "Titan One", sans-serif; font-size: 20px; color: #fff; -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill; }
+  .tag { display: inline-block; font-size: 12px; background: var(--raised); border-radius: 8px; padding: 2px 8px; margin-left: 6px; vertical-align: middle; color: var(--parch); -webkit-text-stroke: 0; }
+  .what { margin-top: 6px; font-size: 15px; line-height: 1.35; }
+  .foot { text-align: center; font-size: 13px; opacity: 0.8; margin-top: 18px; }
+  .foot a { color: #FFC23D; }
+</style>
+</head>
+<body>
+  <h1>Battle screens</h1>
+  <p class="lead">Three build puzzles for the fight. Play each through 5 waves and the Rat King, then pick one.</p>
+  <a class="card" href="a-staff-workshop/">
+    <div class="name">A. Staff Workshop <span class="tag">Gun Hero grid</span></div>
+    <div class="what">Buy parts and place them on cells touching the staff. Drop a part on an identical one to merge it into the next tier.</div>
+  </a>
+  <a class="card" href="b-potion-shelf/">
+    <div class="name">B. Potion Shelf <span class="tag">colour sort</span></div>
+    <div class="what">Pour coloured layers between flasks. Four layers of one colour cork into a potion that powers the frog's spell.</div>
+  </a>
+  <a class="card" href="c-grimoire-page/">
+    <div class="name">C. Grimoire Page <span class="tag">shape packing</span></div>
+    <div class="what">Fit and rotate shaped spell and ingredient pieces on a spellbook page. Stars light up when a piece touches the right neighbour.</div>
+  </a>
+  <p class="foot">The fights play themselves: every choice is made in the puzzle between waves. <a href="../">Back to Magic Frogs</a></p>
+</body>
+</html>

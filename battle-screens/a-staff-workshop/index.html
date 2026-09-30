@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kreon:wght@400;700&family=Titan+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="frame">
+  <div id="phone">
+    <div id="fight-wrap">
+      <canvas id="fight"></canvas>
+      <div id="hud">
+        <div id="hud-wave" class="rb-hud-wave">WAVE 1 / 5</div>
+        <div id="hud-gold"><span id="gold-value">20</span> gold</div>
+      </div>
+      <button id="btn-help" type="button">?</button>
+    </div>
+
+    <div id="build">
+      <div id="stats-bar"></div>
+
+      <div id="grid"></div>
+
+      <div id="bench-label">Bench</div>
+      <div id="bench"></div>
+
+      <div id="tray-row">
+        <div id="shop"></div>
+        <div id="bin" title="Sell"><span>Bin</span></div>
+      </div>
+
+      <div id="controls-row">
+        <button id="btn-reroll" type="button">Reroll<br><span id="reroll-cost">free</span></button>
+        <button id="btn-play" type="button" disabled>PLAY</button>
+      </div>
+
+      <div id="hint-line"></div>
+      <div id="lock-badge">LOCKED</div>
+    </div>
+
+    <div id="overlay-help" class="overlay hidden">
+      <div class="overlay-card">
+        <h2>How to play</h2>
+        <p>Buy a part, then tap it and tap a glowing cell to place it next to the staff.</p>
+        <p>Drop an identical part onto another one to merge it up a tier.</p>
+        <p>Press PLAY when ready. The build decides how hard the frog hits.</p>
+        <button id="btn-help-close" type="button">Got it</button>
+      </div>
+    </div>
+
+    <div id="overlay-end" class="overlay hidden">
+      <div class="overlay-card">
+        <h2 id="end-title">Victory</h2>
+        <p id="end-text"></p>
+        <button id="btn-retry" type="button">Retry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../_shared/art.js"></script>
+<script src="../_shared/meta.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* Grimoire Page prototype (C). Same slate/gold/parchment look as the main prototype. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: #1A1330;
+  font-family: "Kreon", Georgia, serif;
+  color: #EDE6F5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100%;
+}
+body { height: 100vh; }
+
+.titan { font-family: "Titan One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; }
+
+#frame {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #1A1330;
+}
+
+#phone {
+  position: relative;
+  width: 390px; height: 844px;
+  background: #2E3A5C;
+  border-radius: 44px;
+  border: 10px solid #000;
+  box-shadow: 0 0 0 3px #000;
+  overflow: hidden;
+  transform-origin: center center;
+}
+
+/* JS sets a transform: scale(...) on #phone to fit any viewport; edge-to-edge
+   (no rounded frame) once the viewport itself is phone width or narrower. */
+#phone.fullscreen {
+  border-radius: 0; border: 0; box-shadow: none;
+}
+
+#stage {
+  position: absolute; inset: 0;
+  width: 390px; height: 844px;
+  touch-action: none;
+  display: block;
+}
+
+.hidden { display: none !important; }
+
+.hud-btn {
+  position: absolute;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #34395A;
+  border: 3px solid #C9A34A;
+  color: #EDE6F5;
+  font-family: "Titan One", sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.5);
+}
+#btn-help { top: 10px; right: 10px; }
+#btn-rotate { left: 174px; top: 630px; background: #FFB020; color: #241B3A; }
+
+.ui-btn {
+  position: absolute;
+  font-family: "Titan One", sans-serif;
+  font-size: 15px;
+  color: #fff;
+  border: 3px solid #241B3A;
+  border-radius: 14px;
+  box-shadow: 0 4px 0 #241B3A;
+  padding: 0 14px;
+  min-height: 44px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.ui-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #241B3A; }
+.ui-btn:disabled { opacity: 0.45; cursor: default; }
+.ui-btn:disabled:active { transform: none; box-shadow: 0 4px 0 #241B3A; }
+.ui-btn-go { background: #54D63A; }
+.ui-btn-ghost { background: #34395A; border-color: #C9A34A; color: #EDE6F5; }
+
+#btn-reroll { left: 20px; top: 782px; width: 110px; }
+#btn-play { right: 20px; top: 782px; width: 130px; font-size: 18px; }
+#btn-retry { left: 130px; top: 700px; width: 130px; font-size: 18px; }
+
+.toast {
+  position: absolute;
+  left: 50%; top: 700px;
+  transform: translate(-50%, 0);
+  background: rgba(20, 15, 35, 0.92);
+  color: #FFB870;
+  border: 2px solid #C9A34A;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  max-width: 340px;
+  text-align: center;
+}
+.toast.on { opacity: 1; }
+
+.overlay {
+  position: absolute; inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(20, 15, 35, 0.6);
+}
+.overlay .panel {
+  position: relative;
+  background: #262A3D;
+  border: 3px solid #C9A34A;
+  border-radius: 18px;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.5);
+  padding: 18px;
+  width: 300px;
+}
+.overlay .panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.4; }
+.overlay .panel .ui-btn { position: static; display: block; width: 100%; margin-top: 6px; }
