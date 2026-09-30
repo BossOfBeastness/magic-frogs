@@ -49,36 +49,37 @@ body { height: 100vh; }
    transition is cheap and never causes a layout jump. */
 #page-panel {
   position: absolute; left: 0; top: 64px;
-  width: 390px; height: 298px;
+  width: 390px; height: 490px;
   transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateY(290px);
 }
 #page-panel.up { transform: translateY(0); }
 #stage-page {
   position: absolute; inset: 0;
-  width: 390px; height: 298px;
+  width: 390px; height: 490px;
   touch-action: none;
   display: block;
 }
 
 /* The shop tray (offers, reroll, play). Parked off the bottom edge of the
    phone by default (fully hidden, not just dimmed); slides up into view,
-   right under the raised page, between waves. */
+   right under the raised page, between waves, filling the phone down to
+   its bottom edge. */
 #shop-tray {
-  position: absolute; left: 0; top: 362px;
-  width: 390px; height: 164px;
+  position: absolute; left: 0; top: 554px;
+  width: 390px; height: 290px;
   transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-  transform: translateY(482px);
+  transform: translateY(290px);
 }
 #shop-tray.up { transform: translateY(0); }
 #stage-shop {
   position: absolute; left: 0; top: 0;
-  width: 390px; height: 164px;
+  width: 390px; height: 290px;
   touch-action: none;
   display: block;
 }
-#shop-tray #btn-reroll { left: 20px; top: 108px; width: 110px; }
-#shop-tray #btn-play { right: 20px; top: 108px; width: 130px; font-size: 18px; }
+#shop-tray #btn-reroll { left: 20px; top: 212px; width: 150px; height: 56px; font-size: 18px; }
+#shop-tray #btn-play { right: 20px; top: 212px; width: 170px; height: 56px; font-size: 22px; }
 
 .hidden { display: none !important; }
 

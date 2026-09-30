@@ -20,23 +20,28 @@
   var FIGHT_H = 354;               // fight canvas height (top of the phone)
 
   // ---- the grimoire page canvas (local coordinates, 0,0 at its own top-left) --
-  var PAGE_H = 298;
-  var HEADER_Y = 18;
-  var TRAY_Y = 30;
-  var TRAY_SLOT = 38, TRAY_GAP = 8;
+  // PAGE_H fills the phone from the bottom of the fight canvas (FIGHT_H) to
+  // the bottom edge of the phone (H - FIGHT_H), so the locked page has no
+  // empty band under it during a wave; the grid is sized to use most of the
+  // page's own width and height in turn.
+  var PAGE_H = H - FIGHT_H;
+  var HEADER_Y = 22;
+  var TRAY_Y = 44;
+  var TRAY_SLOT = 50, TRAY_GAP = 10;
   var TRAY_COUNT = 3;
   var TRAY_W = TRAY_COUNT * TRAY_SLOT + (TRAY_COUNT - 1) * TRAY_GAP;
   var TRAY_X = Math.round((W - TRAY_W) / 2);
-  var GRID_COLS = 7, GRID_ROWS = 6, CELL = 36;
+  var GRID_COLS = 7, GRID_ROWS = 6, CELL = 50;
   var GRID_W = GRID_COLS * CELL, GRID_H = GRID_ROWS * CELL;
   var GRID_X = Math.round((W - GRID_W) / 2);
-  var GRID_Y = 82;
+  var GRID_Y = 114;
 
   // ---- the shop tray canvas (local coordinates) -------------------------------
-  var SHOP_H = 164;
-  var SHOP_LABEL_Y = 14;
-  var SHOP_Y = 22;
-  var SHOP_CARD_W = 100, SHOP_CARD_H = 78, SHOP_GAP = 8;
+  // Fills the phone from the bottom of the raised page to the bottom edge.
+  var SHOP_H = H - 554;
+  var SHOP_LABEL_Y = 18;
+  var SHOP_Y = 36;
+  var SHOP_CARD_W = 110, SHOP_CARD_H = 140, SHOP_GAP = 14;
   var SHOP_W = 3 * SHOP_CARD_W + 2 * SHOP_GAP;
   var SHOP_X = Math.round((W - SHOP_W) / 2);
 
@@ -150,6 +155,18 @@
   }
 
   function firstWord(name) { return name.split(' ')[0]; }
+
+  // Short on-piece names (this prototype's own tuning, distinct from the
+  // shop card's full Meta name): a spell keeps its own word, an ingredient
+  // takes its second word so it never collides with the spell of the same
+  // key (e.g. ingredient "ember" is Ember Salt, drawn as "Salt").
+  var SPELL_SHORT = { missile: 'Missile', ember: 'Ember', frost: 'Frost', blast: 'Blast', venom: 'Venom', spark: 'Spark' };
+  var ING_SHORT = { ember: 'Salt', frost: 'Petal', shade: 'Shade', blast: 'Powder', storm: 'Feather', moon: 'Moon', quick: 'Quick', dew: 'Dew' };
+  function pieceShortName(piece) {
+    if (piece.type === 'fusion') return firstWord(piece.fusion.name);
+    if (piece.kind === 'spell') return SPELL_SHORT[piece.type] || firstWord(Meta.SPELLS[piece.type].name);
+    return ING_SHORT[piece.type] || firstWord(Meta.INGREDIENTS[piece.type].name);
+  }
 
   function fusedNameFor(typeA, typeB) {
     var evoA = (Meta.EVOLUTIONS[typeA] || []).filter(function (e) { return e.with === typeB; })[0];
@@ -858,60 +875,149 @@
     return { w: maxx + 1, h: maxy + 1 };
   }
 
-  // Draws a piece's shape (footprint outline, fill, icon) at pixel origin
-  // (px,py) top-left, using cell size `cs`. A fused piece gets a diagonal
-  // split of its two element colours instead of a flat tier colour.
+  // The occupied cell closest to a bounding-box corner (rowSign/colSign each
+  // -1 for that side's near edge, +1 for its far edge). A piece's shape is
+  // not always a full rectangle, so a corner badge must anchor to a cell
+  // that is actually part of the shape, not just the bbox corner itself.
+  function extremeCell(cells, rowSign, colSign) {
+    return cells.reduce(function (best, c) {
+      var rowBetter = rowSign < 0 ? c[1] < best[1] : c[1] > best[1];
+      var rowSame = c[1] === best[1];
+      var colBetter = colSign < 0 ? c[0] < best[0] : c[0] > best[0];
+      return (rowBetter || (rowSame && colBetter)) ? c : best;
+    });
+  }
+
+  // Traces the outer boundary of a set of unit cells (a simply-connected
+  // polyomino, which is all our piece shapes are) into a single closed
+  // clockwise polygon, in cell-grid units. One edge per cell side that has
+  // no same-set neighbour on that side; the edges are oriented so each
+  // one's end point is the next edge's start point, and are then walked
+  // start to end into an ordered point list.
+  function outlinePolygon(cells) {
+    var set = {};
+    cells.forEach(function (c) { set[c[0] + ',' + c[1]] = true; });
+    var edges = [];
+    cells.forEach(function (c) {
+      var x = c[0], y = c[1];
+      if (!set[x + ',' + (y - 1)]) edges.push([x, y, x + 1, y]);
+      if (!set[(x + 1) + ',' + y]) edges.push([x + 1, y, x + 1, y + 1]);
+      if (!set[x + ',' + (y + 1)]) edges.push([x + 1, y + 1, x, y + 1]);
+      if (!set[(x - 1) + ',' + y]) edges.push([x, y + 1, x, y]);
+    });
+    var byStart = {};
+    edges.forEach(function (e, i) { byStart[e[0] + ',' + e[1]] = i; });
+    var poly = [], used = {}, cur = 0, guard = 0;
+    while (cur !== undefined && !used[cur] && guard++ <= edges.length) {
+      used[cur] = true;
+      poly.push([edges[cur][0], edges[cur][1]]);
+      cur = byStart[edges[cur][2] + ',' + edges[cur][3]];
+    }
+    return poly;
+  }
+
+  // Builds a rounded-corner path through `pts` (closed loop, pixel coords)
+  // using the standard arcTo-per-vertex trick: the path curves through each
+  // corner instead of meeting it square.
+  function roundedPolyPath(ctx, pts, r) {
+    var n = pts.length;
+    ctx.beginPath();
+    for (var i = 0; i <= n; i++) {
+      var p1 = pts[i % n], p2 = pts[(i + 1) % n];
+      if (i === 0) ctx.moveTo(p1[0], p1[1]);
+      ctx.arcTo(p1[0], p1[1], p2[0], p2[1], r);
+    }
+    ctx.closePath();
+  }
+
+  // Draws a piece as one rounded shape (its cell union's outline, not a
+  // square per cell) filled in its element colour, with its spell bolt or
+  // ingredient icon large in the middle, its short name in Kreon, tier pips
+  // and absorbed-ingredient badges. A fused piece keeps a diagonal split of
+  // its two element colours across the whole shape.
   function drawPieceShape(ctx, piece, shape, px, py, cs, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha === undefined ? 1 : alpha;
     var tierColor = Art.COLORS['tier' + piece.tier] || Art.COLORS.tier1;
-    var sw = piece.type === 'fusion' ? swirls[piece.uid] : null;
     var colorA = piece.type === 'fusion' ? (C[piece.fusion.elementA] || tierColor) : tierColor;
     var colorB = piece.type === 'fusion' ? (C[piece.fusion.elementB] || tierColor) : tierColor;
-    shape.cells.forEach(function (cell) {
-      var cx = px + cell[0] * cs, cy = py + cell[1] * cs;
-      if (piece.type === 'fusion') {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(cx + 1, cy + 1, cs - 2, cs - 2);
-        ctx.clip();
-        ctx.fillStyle = colorA;
-        ctx.globalAlpha = (alpha === undefined ? 1 : alpha) * 0.9;
-        ctx.fillRect(cx + 1, cy + 1, cs - 2, cs - 2);
-        ctx.beginPath();
-        ctx.moveTo(cx + cs, cy);
-        ctx.lineTo(cx + cs, cy + cs);
-        ctx.lineTo(cx, cy + cs);
-        ctx.closePath();
-        ctx.fillStyle = colorB;
-        ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fillStyle = tierColor;
-        ctx.globalAlpha = (alpha === undefined ? 1 : alpha) * 0.9;
-        ctx.fillRect(cx + 1, cy + 1, cs - 2, cs - 2);
-      }
-      ctx.globalAlpha = alpha === undefined ? 1 : alpha;
-      ctx.strokeStyle = C.ink;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(cx + 1, cy + 1, cs - 2, cs - 2);
-    });
     var b = shapeBounds(shape.cells);
+    var polyCell = outlinePolygon(shape.cells);
+    var polyPx = polyCell.map(function (p) { return [px + p[0] * cs, py + p[1] * cs]; });
+    var r = Math.min(10, cs * 0.22);
+
+    ctx.save();
+    roundedPolyPath(ctx, polyPx, r);
+    ctx.clip();
+    if (piece.type === 'fusion') {
+      ctx.fillStyle = colorA;
+      ctx.fillRect(px, py, b.w * cs, b.h * cs);
+      ctx.beginPath();
+      ctx.moveTo(px + b.w * cs, py);
+      ctx.lineTo(px + b.w * cs, py + b.h * cs);
+      ctx.lineTo(px, py + b.h * cs);
+      ctx.closePath();
+      ctx.fillStyle = colorB;
+      ctx.fill();
+    } else {
+      ctx.fillStyle = tierColor;
+      ctx.fillRect(px, py, b.w * cs, b.h * cs);
+    }
+    ctx.restore();
+
+    roundedPolyPath(ctx, polyPx, r);
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
     var midx = px + b.w * cs / 2, midy = py + b.h * cs / 2;
+    var minDimPx = Math.min(b.w, b.h) * cs;
     if (piece.kind === 'spell') {
-      Art.bolt(ctx, midx, midy, cs * 0.62, piece.type === 'fusion' ? piece.fusion.elementA : Meta.SPELLS[piece.type].element, 0, now() / 1000);
+      Art.bolt(ctx, midx, midy - cs * 0.08, minDimPx * 0.56, piece.type === 'fusion' ? piece.fusion.elementA : Meta.SPELLS[piece.type].element, 0, now() / 1000);
     } else {
       ctx.save();
-      ctx.beginPath();
-      shape.cells.forEach(function (cell) { ctx.rect(px + cell[0] * cs, py + cell[1] * cs, cs, cs); });
+      roundedPolyPath(ctx, polyPx, r);
       ctx.clip();
-      Art.ingredient(ctx, midx, midy, cs * 0.98, piece.type, piece.tier);
+      Art.ingredient(ctx, midx, midy - cs * 0.08, minDimPx * 0.86, piece.type, piece.tier);
       ctx.restore();
     }
-    // absorbed-ingredient badges, up to 2, small dots at the piece's top-left corner
+
+    // short name, in Kreon, across the bottom of the shape
+    ctx.save();
+    ctx.font = '700 ' + Math.max(9, Math.min(12, cs * 0.24)) + 'px Kreon, Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.6;
+    ctx.strokeStyle = C.ink;
+    ctx.fillStyle = '#fff';
+    var labelY = py + b.h * cs - 6;
+    var label = pieceShortName(piece);
+    ctx.strokeText(label, midx, labelY);
+    ctx.fillText(label, midx, labelY);
+    ctx.restore();
+
+    // tier pips, small dots in the tier colour, inside the shape's own
+    // topmost-then-rightmost occupied cell (not just the bbox corner,
+    // which may fall in a notch for an L- or Z-shaped piece)
+    var tierCell = extremeCell(shape.cells, -1, 1);
+    var tcx = px + tierCell[0] * cs, tcy = py + tierCell[1] * cs;
+    for (var i = 0; i < piece.tier; i++) {
+      ctx.beginPath();
+      ctx.arc(tcx + cs - 9 - i * 8, tcy + 9, 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = tierColor;
+      ctx.fill();
+      ctx.strokeStyle = C.ink;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // absorbed-ingredient badges, up to 2, small dots inside the shape's own
+    // bottommost-then-rightmost occupied cell
     if (piece.absorbed && piece.absorbed.length) {
+      var badgeCell = extremeCell(shape.cells, 1, 1);
+      var bcx = px + badgeCell[0] * cs, bcy = py + badgeCell[1] * cs;
       piece.absorbed.forEach(function (a, i) {
-        var bx = px + 7 + i * 13, by = py + 7;
+        var bx = bcx + cs - 9 - i * 13, by = bcy + cs - 9;
         ctx.beginPath();
         ctx.arc(bx, by, 5.5, 0, Math.PI * 2);
         ctx.fillStyle = C[Meta.INGREDIENTS[a.type].stat === 'poison' ? 'poison' : (a.type === 'ember' ? 'fire' : a.type === 'frost' ? 'ice' : a.type === 'blast' ? 'blast' : a.type === 'storm' ? 'storm' : '#D8DCE8')] || '#D8DCE8';
@@ -1023,22 +1129,24 @@
       ctx.restore();
     });
 
-    // combo names, popping up over the rat they fired on
-    state.combos = state.combos.filter(function (cb) { return now() - cb.t0 < 900; });
+    // combo names, popping up large over the rat they fired on, over 0.8s
+    var COMBO_DUR = 800;
+    state.combos = state.combos.filter(function (cb) { return now() - cb.t0 < COMBO_DUR; });
     state.combos.forEach(function (cb) {
-      var p = (now() - cb.t0) / 900;
+      var p = (now() - cb.t0) / COMBO_DUR;
       var pop = p < 0.25 ? (p / 0.25) : 1;
       ctx.save();
-      ctx.globalAlpha = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+      ctx.globalAlpha = p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4;
       // Clamp so the label never runs off the fight canvas, even when the
       // rat it fired on is right at the edge (a common spot for a kill).
-      var clampedX = Math.max(75, Math.min(W - 75, cb.x));
-      ctx.translate(clampedX, cb.y - p * 30);
+      var clampedX = Math.max(95, Math.min(W - 95, cb.x));
+      ctx.translate(clampedX, cb.y - p * 42);
       ctx.scale(0.7 + pop * 0.5, 0.7 + pop * 0.5);
       ctx.fillStyle = cb.color;
       ctx.strokeStyle = C.ink;
-      ctx.lineWidth = 3;
-      ctx.font = '700 16px "Titan One", sans-serif';
+      ctx.lineWidth = 4.5;
+      ctx.lineJoin = 'round';
+      ctx.font = '700 22px "Titan One", sans-serif';
       ctx.textAlign = 'center';
       ctx.strokeText(cb.name, 0, 0);
       ctx.fillText(cb.name, 0, 0);
@@ -1243,7 +1351,7 @@
     var ctx = ctxShop;
     ctx.clearRect(0, 0, W, SHOP_H);
     ctx.fillStyle = C.ink;
-    ctx.font = '700 12px Kreon, Georgia, serif';
+    ctx.font = '700 15px Kreon, Georgia, serif';
     ctx.textAlign = 'left';
     ctx.fillText('Shop', SHOP_X, SHOP_LABEL_Y);
     state.offers.forEach(function (o, i) {
@@ -1261,13 +1369,13 @@
       var fakePiece = { kind: o.kind, type: o.type, tier: o.tier, rot: 0, uid: -1, absorbed: [] };
       var shapeO = shapeFor(fakePiece);
       var bO = shapeBounds(shapeO.cells);
-      var cs = Math.min((SHOP_CARD_W - 16) / bO.w, 34 / bO.h);
-      drawPieceShape(ctx, fakePiece, shapeO, sx + (SHOP_CARD_W - bO.w * cs) / 2, SHOP_Y + 6, cs, 1);
+      var cs = Math.min((SHOP_CARD_W - 16) / bO.w, 82 / bO.h);
+      drawPieceShape(ctx, fakePiece, shapeO, sx + (SHOP_CARD_W - bO.w * cs) / 2, SHOP_Y + 8, cs, 1);
       ctx.fillStyle = C.ink;
-      ctx.font = '10px Kreon, Georgia, serif';
+      ctx.font = '700 13px Kreon, Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText(name, sx + SHOP_CARD_W / 2, SHOP_Y + SHOP_CARD_H - 20);
-      ctx.font = '700 13px "Titan One", sans-serif';
+      ctx.fillText(name, sx + SHOP_CARD_W / 2, SHOP_Y + SHOP_CARD_H - 24);
+      ctx.font = '700 17px "Titan One", sans-serif';
       ctx.fillStyle = o.sold ? '#7A6A50' : C.buyShade;
       ctx.fillText(o.sold ? 'SOLD' : o.price + 'g', sx + SHOP_CARD_W / 2, SHOP_Y + SHOP_CARD_H - 6);
       if (state.firstBreak && affordable && i === 0 && !anyPieceOnGrid() && Object.keys(state.pieces).length === 0 && state.tray.every(function (t2) { return !t2; })) {
